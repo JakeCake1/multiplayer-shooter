@@ -7,7 +7,8 @@
     "Shooter.Application",
     "Shooter.Presentation",
     "Shooter.Infrastructure.Fusion",
-    "Shooter.Infrastructure.PlayFab"
+    "Shooter.Infrastructure.PlayFab",
+    "VContainer"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],
