@@ -1,0 +1,19 @@
+{
+    "name": "Shooter.Bootstrap.Editor",
+    "rootNamespace": "Shooter.Bootstrap.Editor",
+    "references": [
+        "Shooter.Bootstrap",
+        "VContainer"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

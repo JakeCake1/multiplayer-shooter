@@ -116,6 +116,20 @@ This makes it an application use-case coordinator rather than a global game mana
 
 For the local vertical slice, a local connection-data provider may supply the same application model without PlayFab. This is a composition choice, not a second flow.
 
+The first local implementation uses two explicit bootstrap scenes:
+
+- `LocalServer` contains only `ServerLifetimeScope` and starts Fusion in Server Mode.
+- `LocalClient` contains only `ClientLifetimeScope` and starts Fusion in Client Mode.
+
+Both roles use the same session identifier. Local launch arguments are intentionally project-specific so they do not collide with Unity arguments:
+
+```text
+--shooter-session <name>   default: local-1v1
+--shooter-port <port>      server only; default: 27015
+```
+
+The role is selected by composition, not by a runtime flag. This keeps the dedicated-server path from constructing client presentation or input services. The local launcher is temporary vertical-slice composition; production clients will receive equivalent neutral connection data from the matchmaking/allocation capability.
+
 ### Connect and Wait
 
 1. Fusion infrastructure owns runner creation and the concrete connection attempt.
