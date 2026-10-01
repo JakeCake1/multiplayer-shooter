@@ -1,0 +1,17 @@
+{
+  "name": "Shooter.Application",
+  "rootNamespace": "Shooter.Application",
+  "references": [
+    "Shooter.Core",
+    "Shooter.Gameplay"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

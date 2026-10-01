@@ -1,0 +1,23 @@
+{
+  "name": "Shooter.Application.Tests.EditMode",
+  "rootNamespace": "Shooter.Application.Tests",
+  "references": [
+    "Shooter.Core",
+    "Shooter.Gameplay",
+    "Shooter.Application"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

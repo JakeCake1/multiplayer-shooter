@@ -1,0 +1,16 @@
+{
+  "name": "Shooter.Infrastructure.Fusion",
+  "rootNamespace": "Shooter.Infrastructure.Fusion",
+  "references": [
+    "Shooter.Application"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

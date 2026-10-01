@@ -1,0 +1,21 @@
+{
+  "name": "Shooter.Bootstrap",
+  "rootNamespace": "Shooter.Bootstrap",
+  "references": [
+    "Shooter.Core",
+    "Shooter.Gameplay",
+    "Shooter.Application",
+    "Shooter.Presentation",
+    "Shooter.Infrastructure.Fusion",
+    "Shooter.Infrastructure.PlayFab"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
