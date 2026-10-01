@@ -207,6 +207,8 @@ Camera, HUD, animation, sound, VFX, crosshair, menus, and non-authoritative feed
 ## State Machines
 Do not collapse all runtime flow into one manager.
 
+The detailed ownership, transitions, cancellation, and failure policy are defined in `APPLICATION_FLOW.md`.
+
 ### Client/application state
 Conceptually:
 `Boot -> Menu -> Searching -> Connecting -> Waiting -> Playing -> Results`
