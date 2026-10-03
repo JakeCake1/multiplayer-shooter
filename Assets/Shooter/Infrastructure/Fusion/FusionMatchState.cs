@@ -1,6 +1,6 @@
 using System;
 using global::Fusion;
-using Shooter.Gameplay;
+using Shooter.Features.MatchRules;
 using UnityEngine;
 
 namespace Shooter.Infrastructure.Fusion

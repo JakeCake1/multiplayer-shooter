@@ -3,7 +3,8 @@
   "rootNamespace": "Shooter.Infrastructure.Fusion",
   "references": [
     "Shooter.Application",
-    "Shooter.Gameplay",
+    "Shooter.Features.Player",
+    "Shooter.Features.MatchRules",
     "Fusion.Unity",
     "Photon.Realtime",
     "Unity.InputSystem"

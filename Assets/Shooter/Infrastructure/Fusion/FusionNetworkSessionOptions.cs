@@ -1,5 +1,5 @@
 using System;
-using Shooter.Gameplay;
+using Shooter.Features.MatchRules;
 using UnityEngine;
 
 namespace Shooter.Infrastructure.Fusion

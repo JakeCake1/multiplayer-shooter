@@ -1,6 +1,6 @@
 using System;
 using Shooter.Application;
-using Shooter.Gameplay;
+using Shooter.Features.MatchRules;
 using Shooter.Infrastructure.Fusion;
 using UnityEngine;
 using VContainer;
@@ -31,9 +31,7 @@ namespace Shooter.Bootstrap.Server
         protected override void Configure(IContainerBuilder builder)
         {
             var arguments = Environment.GetCommandLineArgs();
-            var request = LocalNetworkLaunchArguments.CreateRequest(
-                NetworkSessionRole.Server,
-                arguments);
+            var request = LocalNetworkLaunchArguments.CreateServerRequest(arguments);
             var shutdownSignalPath = LocalNetworkLaunchArguments.GetShutdownSignalPath(arguments);
 
             var matchRules = new MatchRules(
@@ -46,9 +44,9 @@ namespace Shooter.Bootstrap.Server
                 playerPrefab,
                 matchStatePrefab,
                 matchRules));
-            builder.Register<FusionNetworkSession>(Lifetime.Singleton).As<INetworkSession>();
+            builder.Register<FusionServerNetworkSession>(Lifetime.Singleton).As<INetworkSession>();
             builder.RegisterInstance(request);
-            builder.RegisterEntryPoint<LocalProcessDiagnostics>();
+            builder.RegisterEntryPoint<ServerLocalProcessDiagnostics>();
             builder.RegisterEntryPoint<LocalNetworkSessionStarter>();
 
             if (!string.IsNullOrWhiteSpace(shutdownSignalPath))

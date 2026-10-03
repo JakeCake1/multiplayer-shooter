@@ -35,6 +35,12 @@ Treat the following as accepted unless the user explicitly asks to revisit them:
 11. Use `.asmdef` references to enforce dependency direction rather than relying on conventions alone.
 12. Avoid premature systems outside MVP: bots, progression, inventory, multiple weapons/maps, MMR, customization, abilities.
 13. Keep code and naming straightforward enough to explain in a portfolio interview.
+14. Prefer role-specific client and server implementations selected by their composition roots. Do not combine both execution paths in one class when separate classes can express the behavior directly.
+15. Extract a named method when three or more related lines implement one responsibility.
+16. Keep each project-owned C# statement on one physical line unless separate statements are delimited with semicolons. Do not apply this rule to vendored or generated code.
+17. Use Addressables for runtime game scenes and content prefabs. Keep only the minimal client and server bootstrap scenes in Build Settings.
+18. Keep no more than one project-owned C# class in a source file. Name the file after that class. Vendored and generated code are excluded.
+19. Organize gameplay by feature under `Assets/Shooter/Features/<FeatureName>`. Every feature owns its own `.asmdef`; new gameplay logic starts in a new or existing feature directory rather than a shared catch-all gameplay assembly.
 
 ## Working Style for Codex
 - Before making a substantial architectural change, state the proposed change and why it respects the documented boundaries.

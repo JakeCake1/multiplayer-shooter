@@ -2,8 +2,7 @@
   "name": "Shooter.Application",
   "rootNamespace": "Shooter.Application",
   "references": [
-    "Shooter.Core",
-    "Shooter.Gameplay"
+    "Shooter.Core"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

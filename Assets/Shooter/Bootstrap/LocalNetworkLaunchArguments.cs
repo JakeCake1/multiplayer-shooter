@@ -14,22 +14,16 @@ namespace Shooter.Bootstrap
         private const string PortOption = "--shooter-port";
         private const string ShutdownSignalOption = "--shooter-shutdown-signal";
 
-        public static NetworkSessionStartRequest CreateRequest(
-            NetworkSessionRole role,
-            string[] arguments)
+        public static NetworkSessionStartRequest CreateClientRequest(string[] arguments)
         {
-            if (arguments == null)
-            {
-                throw new ArgumentNullException(nameof(arguments));
-            }
+            ValidateArguments(arguments);
+            return NetworkSessionStartRequest.ForClient(ReadSessionName(arguments), PlayerCount);
+        }
 
-            var sessionName = ReadOption(arguments, SessionOption) ?? DefaultSessionName;
-
-            if (role == NetworkSessionRole.Client)
-            {
-                return NetworkSessionStartRequest.ForClient(sessionName, PlayerCount);
-            }
-
+        public static NetworkSessionStartRequest CreateServerRequest(string[] arguments)
+        {
+            ValidateArguments(arguments);
+            var sessionName = ReadSessionName(arguments);
             var portText = ReadOption(arguments, PortOption);
             var port = portText == null ? DefaultServerPort : ParsePort(portText);
             return NetworkSessionStartRequest.ForServer(sessionName, port, PlayerCount);
@@ -43,6 +37,19 @@ namespace Shooter.Bootstrap
             }
 
             return ReadOption(arguments, ShutdownSignalOption);
+        }
+
+        private static void ValidateArguments(string[] arguments)
+        {
+            if (arguments == null)
+            {
+                throw new ArgumentNullException(nameof(arguments));
+            }
+        }
+
+        private static string ReadSessionName(string[] arguments)
+        {
+            return ReadOption(arguments, SessionOption) ?? DefaultSessionName;
         }
 
         private static string ReadOption(string[] arguments, string option)

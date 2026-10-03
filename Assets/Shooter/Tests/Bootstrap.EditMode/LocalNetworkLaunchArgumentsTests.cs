@@ -8,9 +8,7 @@ namespace Shooter.Bootstrap.Tests
         [Test]
         public void CreateRequest_ClientUsesDefaultSession()
         {
-            var request = LocalNetworkLaunchArguments.CreateRequest(
-                NetworkSessionRole.Client,
-                new[] { "ShooterClient.exe" });
+            var request = LocalNetworkLaunchArguments.CreateClientRequest(new[] { "ShooterClient.exe" });
 
             Assert.That(request.Role, Is.EqualTo(NetworkSessionRole.Client));
             Assert.That(request.SessionName, Is.EqualTo(LocalNetworkLaunchArguments.DefaultSessionName));
@@ -21,16 +19,7 @@ namespace Shooter.Bootstrap.Tests
         [Test]
         public void CreateRequest_ServerReadsSessionAndPort()
         {
-            var request = LocalNetworkLaunchArguments.CreateRequest(
-                NetworkSessionRole.Server,
-                new[]
-                {
-                    "ShooterServer.exe",
-                    "--shooter-session",
-                    "test-match",
-                    "--shooter-port",
-                    "28000"
-                });
+            var request = LocalNetworkLaunchArguments.CreateServerRequest(new[] { "ShooterServer.exe", "--shooter-session", "test-match", "--shooter-port", "28000" });
 
             Assert.That(request.Role, Is.EqualTo(NetworkSessionRole.Server));
             Assert.That(request.SessionName, Is.EqualTo("test-match"));
@@ -43,9 +32,7 @@ namespace Shooter.Bootstrap.Tests
         public void CreateRequest_ServerRejectsInvalidPort(string value)
         {
             Assert.That(
-                () => LocalNetworkLaunchArguments.CreateRequest(
-                    NetworkSessionRole.Server,
-                    new[] { "ShooterServer.exe", "--shooter-port", value }),
+                () => LocalNetworkLaunchArguments.CreateServerRequest(new[] { "ShooterServer.exe", "--shooter-port", value }),
                 Throws.ArgumentException);
         }
 
@@ -53,9 +40,7 @@ namespace Shooter.Bootstrap.Tests
         public void CreateRequest_RejectsOptionWithoutValue()
         {
             Assert.That(
-                () => LocalNetworkLaunchArguments.CreateRequest(
-                    NetworkSessionRole.Client,
-                    new[] { "ShooterClient.exe", "--shooter-session" }),
+                () => LocalNetworkLaunchArguments.CreateClientRequest(new[] { "ShooterClient.exe", "--shooter-session" }),
                 Throws.ArgumentException);
         }
 

@@ -9,7 +9,9 @@ Build a small multiplayer game with explicit boundaries rather than a monolithic
 Assets/
 └── Shooter/
     ├── Core/
-    ├── Gameplay/
+    ├── Features/
+    │   ├── Player/
+    │   └── MatchRules/
     ├── Application/
     ├── Presentation/
     ├── Infrastructure/
@@ -26,7 +28,8 @@ Start with these assemblies (names may be refined only with a concrete reason):
 
 ```text
 Shooter.Core
-Shooter.Gameplay
+Shooter.Features.Player
+Shooter.Features.MatchRules
 Shooter.Application
 Shooter.Presentation
 Shooter.Infrastructure.Fusion
@@ -45,12 +48,12 @@ Presentation
 Application
      |
      v
- Gameplay
+Feature assemblies
      |
      v
    Core
 
-Infrastructure.Fusion  ---> Application / Gameplay / Core as required
+Infrastructure.Fusion  ---> Application / feature assemblies / Core as required
 Infrastructure.PlayFab ---> Application / Core as required
 
 Bootstrap ---> all concrete modules required to compose a client or server
@@ -59,8 +62,8 @@ Bootstrap ---> all concrete modules required to compose a client or server
 The exact references should remain as narrow as practical. Do not add a reference merely for convenience.
 
 ### Hard constraints
-- `Shooter.Core` must not reference Fusion, PlayFab, VContainer, Presentation, or Gameplay.
-- `Shooter.Gameplay` must not reference Fusion, PlayFab, UI, or Bootstrap.
+- `Shooter.Core` must not reference Fusion, PlayFab, VContainer, Presentation, or feature assemblies.
+- Feature assemblies must not reference Fusion, PlayFab, UI, or Bootstrap.
 - `Shooter.Application` must not reference concrete PlayFab/Fusion implementations.
 - Presentation must not call PlayFab APIs directly.
 - Gameplay must not call Photon APIs directly.
@@ -81,8 +84,8 @@ Possible contents only when actually needed:
 
 Avoid "utility dumping ground" behavior.
 
-### Gameplay
-Game rules independent of networking vendor:
+### Features
+Each gameplay feature lives under `Assets/Shooter/Features/<FeatureName>`, owns its own assembly definition, and remains independent of the networking vendor. Current features are `Player` and `MatchRules`. Future gameplay behavior belongs to a new or existing feature rather than a shared catch-all gameplay assembly:
 - health/damage rules;
 - weapon state/rules;
 - player gameplay state;

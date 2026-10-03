@@ -3,7 +3,7 @@
   "rootNamespace": "Shooter.Bootstrap",
   "references": [
     "Shooter.Core",
-    "Shooter.Gameplay",
+    "Shooter.Features.MatchRules",
     "Shooter.Application",
     "Shooter.Presentation",
     "Shooter.Infrastructure.Fusion",

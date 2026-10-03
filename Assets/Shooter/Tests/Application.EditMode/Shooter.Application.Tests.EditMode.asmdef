@@ -3,7 +3,6 @@
   "rootNamespace": "Shooter.Application.Tests",
   "references": [
     "Shooter.Core",
-    "Shooter.Gameplay",
     "Shooter.Application"
   ],
   "includePlatforms": [

@@ -1,0 +1,21 @@
+{
+  "name": "Shooter.Features.Player.Tests.EditMode",
+  "rootNamespace": "Shooter.Features.Player.Tests",
+  "references": [
+    "Shooter.Features.Player"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

@@ -1,5 +1,5 @@
 using global::Fusion;
-using Shooter.Gameplay;
+using Shooter.Features.Player;
 using UnityEngine;
 
 namespace Shooter.Infrastructure.Fusion

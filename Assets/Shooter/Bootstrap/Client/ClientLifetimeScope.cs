@@ -18,17 +18,15 @@ namespace Shooter.Bootstrap.Client
         protected override void Configure(IContainerBuilder builder)
         {
             var arguments = Environment.GetCommandLineArgs();
-            var request = LocalNetworkLaunchArguments.CreateRequest(
-                NetworkSessionRole.Client,
-                arguments);
+            var request = LocalNetworkLaunchArguments.CreateClientRequest(arguments);
             var shutdownSignalPath = LocalNetworkLaunchArguments.GetShutdownSignalPath(arguments);
 
             builder.RegisterInstance(new FusionNetworkSessionOptions(
                 playerPrefab,
                 matchStatePrefab));
-            builder.Register<FusionNetworkSession>(Lifetime.Singleton).As<INetworkSession>();
+            builder.Register<FusionClientNetworkSession>(Lifetime.Singleton).As<INetworkSession>();
             builder.RegisterInstance(request);
-            builder.RegisterEntryPoint<LocalProcessDiagnostics>();
+            builder.RegisterEntryPoint<ClientLocalProcessDiagnostics>();
             builder.RegisterEntryPoint<LocalNetworkSessionStarter>();
 
             if (!string.IsNullOrWhiteSpace(shutdownSignalPath))
