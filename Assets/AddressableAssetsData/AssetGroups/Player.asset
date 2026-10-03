@@ -14,12 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: Player
   m_GUID: 538b0675487e57144ac3d9ae215cb84a
-  m_SerializeEntries:
-  - m_GUID: a3c9b3ee863803f44b4d11c2e569900c
-    m_Address: Shooter/Network/Player
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
+  m_SerializeEntries: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 4c1e52649896235459c1c1c6435fb982, type: 2}
   m_SchemaSet:
