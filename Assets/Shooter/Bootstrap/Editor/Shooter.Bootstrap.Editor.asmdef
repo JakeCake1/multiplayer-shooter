@@ -3,6 +3,8 @@
     "rootNamespace": "Shooter.Bootstrap.Editor",
     "references": [
         "Shooter.Bootstrap",
+        "Shooter.Infrastructure.Fusion",
+        "Fusion.Unity",
         "VContainer"
     ],
     "includePlatforms": [

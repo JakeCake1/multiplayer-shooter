@@ -128,6 +128,8 @@ Both roles use the same session identifier. Local launch arguments are intention
 --shooter-port <port>      server only; default: 27015
 ```
 
+The local client uses `W`, `A`, `S`, and `D` for the first movement proof. Input is sampled only by the client runner, transported as Fusion input, and consumed by both the predicting input-authority client and the authoritative server in `FixedUpdateNetwork`.
+
 The role is selected by composition, not by a runtime flag. This keeps the dedicated-server path from constructing client presentation or input services. The local launcher is temporary vertical-slice composition; production clients will receive equivalent neutral connection data from the matchmaking/allocation capability.
 
 ### Connect and Wait

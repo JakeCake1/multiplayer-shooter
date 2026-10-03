@@ -4,13 +4,20 @@ using Fusion;
 using Fusion.Sockets;
 using Shooter.Application;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Object = UnityEngine.Object;
 
 namespace Shooter.Infrastructure.Fusion
 {
     public sealed class FusionNetworkSession : INetworkSession, IDisposable
     {
+        private readonly FusionNetworkSessionOptions _options;
         private NetworkRunner _runner;
+
+        public FusionNetworkSession(FusionNetworkSessionOptions options)
+        {
+            _options = options ?? throw new ArgumentNullException(nameof(options));
+        }
 
         public event Action<NetworkSessionState> StateChanged;
 
@@ -94,7 +101,7 @@ namespace Shooter.Infrastructure.Fusion
             SetState(NetworkSessionState.Disconnected);
         }
 
-        private static NetworkRunner CreateRunner(NetworkSessionRole role)
+        private NetworkRunner CreateRunner(NetworkSessionRole role)
         {
             var runnerObject = new GameObject($"Fusion NetworkRunner ({role})");
             Object.DontDestroyOnLoad(runnerObject);
@@ -103,7 +110,52 @@ namespace Shooter.Infrastructure.Fusion
             runner.ProvideInput = role == NetworkSessionRole.Client;
             runnerObject.AddComponent<NetworkSceneManagerDefault>();
             runnerObject.AddComponent<NetworkObjectProviderDefault>();
+
+            if (role == NetworkSessionRole.Server)
+            {
+                runnerObject.AddComponent<FusionPlayerSpawner>().Configure(_options.PlayerPrefab);
+            }
+            else
+            {
+                var events = runnerObject.AddComponent<NetworkEvents>();
+                events.OnInput.AddListener(CollectInput);
+            }
+
             return runner;
+        }
+
+        private static void CollectInput(NetworkRunner runner, NetworkInput networkInput)
+        {
+            var keyboard = Keyboard.current;
+            var movement = Vector2.zero;
+
+            if (keyboard != null)
+            {
+                if (keyboard.wKey.isPressed)
+                {
+                    movement += Vector2.up;
+                }
+
+                if (keyboard.sKey.isPressed)
+                {
+                    movement += Vector2.down;
+                }
+
+                if (keyboard.aKey.isPressed)
+                {
+                    movement += Vector2.left;
+                }
+
+                if (keyboard.dKey.isPressed)
+                {
+                    movement += Vector2.right;
+                }
+            }
+
+            networkInput.Set(new FusionPlayerInput
+            {
+                MoveDirection = movement.normalized
+            });
         }
 
         private async Task DestroyRunnerAsync()

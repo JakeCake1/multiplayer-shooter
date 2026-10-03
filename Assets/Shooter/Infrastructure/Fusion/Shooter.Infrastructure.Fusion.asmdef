@@ -3,7 +3,9 @@
   "rootNamespace": "Shooter.Infrastructure.Fusion",
   "references": [
     "Shooter.Application",
-    "Fusion.Unity"
+    "Shooter.Gameplay",
+    "Fusion.Unity",
+    "Unity.InputSystem"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],
