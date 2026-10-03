@@ -1,8 +1,44 @@
 param(
     [string]$SessionName = "local-1v1",
     [ValidateRange(1, 65535)]
-    [int]$Port = 27015
+    [int]$Port = 27015,
+    [ValidateRange(1, 300)]
+    [int]$ServerReadyTimeoutSeconds = 90
 )
+
+function Wait-LocalServerReady {
+    param(
+        [System.Diagnostics.Process]$Process,
+        [string]$LogPath,
+        [int]$TimeoutSeconds
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    $connectedPattern = '\[LocalProcess\]\s+Role:\s+Server.*Network:\s+Connected'
+
+    while ([DateTime]::UtcNow -lt $deadline) {
+        $Process.Refresh()
+        if ($Process.HasExited) {
+            throw "Dedicated server exited before becoming ready (exit code $($Process.ExitCode)). See: $LogPath"
+        }
+
+        if (Test-Path -LiteralPath $LogPath) {
+            try {
+                $logContent = Get-Content -LiteralPath $LogPath -Raw -ErrorAction Stop
+                if ($logContent -match $connectedPattern) {
+                    return
+                }
+            }
+            catch [System.IO.IOException] {
+                # Unity can briefly lock the log while flushing it. Retry until timeout.
+            }
+        }
+
+        Start-Sleep -Milliseconds 250
+    }
+
+    throw "Dedicated server did not become ready within $TimeoutSeconds seconds. See: $LogPath"
+}
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $serverPath = Join-Path $projectRoot "Builds\Local\Server\ShooterServer.exe"
@@ -24,6 +60,9 @@ $clientALog = Join-Path $logsPath "client-a.log"
 $clientBLog = Join-Path $logsPath "client-b.log"
 $processStatePath = Join-Path $logsPath "local-match-processes.json"
 
+# Avoid treating a successful line from a previous run as current readiness.
+Set-Content -LiteralPath $serverLog -Value "" -Encoding UTF8
+
 $serverProcess = Start-Process `
     -FilePath $serverPath `
     -ArgumentList @(
@@ -33,7 +72,24 @@ $serverProcess = Start-Process `
     -WindowStyle Hidden `
     -PassThru
 
-Start-Sleep -Seconds 2
+Write-Host "Waiting up to $ServerReadyTimeoutSeconds seconds for the dedicated server to become ready..."
+
+try {
+    Wait-LocalServerReady `
+        -Process $serverProcess `
+        -LogPath $serverLog `
+        -TimeoutSeconds $ServerReadyTimeoutSeconds
+}
+catch {
+    if (-not $serverProcess.HasExited) {
+        Stop-Process -Id $serverProcess.Id -Force
+    }
+
+    throw
+}
+
+Write-Host "Dedicated server is connected. Starting clients..."
+Start-Sleep -Milliseconds 500
 
 $clientAProcess = Start-Process `
     -FilePath $clientPath `

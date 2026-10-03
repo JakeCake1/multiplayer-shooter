@@ -47,7 +47,13 @@ Optional arguments:
 .\RunLocalMatch.ps1 -SessionName test-2 -Port 28000
 ```
 
-The script launches the server first, waits briefly, then launches two clients. Use `W`, `A`, `S`, and `D` in the focused client window.
+The script launches the server first and waits until its log reports `Network: Connected` before launching either client. The readiness timeout defaults to 90 seconds and can be increased for a particularly slow Development build:
+
+```powershell
+.\RunLocalMatch.ps1 -SessionName test-2 -Port 28000 -ServerReadyTimeoutSeconds 120
+```
+
+Use `W`, `A`, `S`, and `D` in the focused client window.
 
 After launch, PowerShell prints a process table with role, PID, session, server port, and log path. Logs are separated into:
 
