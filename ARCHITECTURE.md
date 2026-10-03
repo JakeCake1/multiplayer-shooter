@@ -152,7 +152,7 @@ Likely responsibilities:
 
 Do not create project-owned equivalents for every Fusion primitive such as `INetworkVariable`, `INetworkObject`, `INetworkRPC`, etc. That would be a second networking framework and is explicitly not desired.
 
-The authoritative match adapter is split by responsibility: `FusionServerMatchController` advances pure `MatchStateMachine` rules, `FusionMatchState` contains only replicated state, and `FusionMatchStateObserver` handles client observation. Network prefabs are resolved through `FusionNetworkAssetLoader`; bootstrap scenes do not serialize prefab references.
+The authoritative match adapter is split by responsibility: `FusionServerMatchController` advances pure `MatchStateMachine` rules, `FusionMatchState` contains only replicated state, and `FusionMatchStateObserver` handles client observation. `MatchPhaseRules` defines when gameplay input is accepted, while `FusionPlayerAvatar` applies that rule to the replicated phase on both the authoritative and predicted simulation paths. Network prefabs are resolved through `FusionNetworkAssetLoader`; bootstrap scenes do not serialize prefab references.
 
 Fusion `NetworkBehaviour` implementations live under `Infrastructure/Fusion/NetworkBehaviours/<FeatureName>` while remaining inside `Shooter.Infrastructure.Fusion`. This keeps network-facing components discoverable without creating an assembly per adapter.
 
