@@ -142,6 +142,7 @@ namespace Shooter.Infrastructure.Fusion
             else
             {
                 var events = runnerObject.AddComponent<NetworkEvents>();
+                events.OnInput ??= new NetworkEvents.InputEvent();
                 events.OnInput.AddListener(CollectInput);
             }
 
