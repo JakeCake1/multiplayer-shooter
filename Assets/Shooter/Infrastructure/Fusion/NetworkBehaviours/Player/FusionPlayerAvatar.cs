@@ -17,15 +17,8 @@ namespace Shooter.Infrastructure.Fusion
                 return;
             }
 
-            var displacement = PlayerMovementRules.CalculateDisplacement(
-                new PlanarMovement(input.MoveDirection.x, input.MoveDirection.y),
-                MovementSpeed,
-                Runner.DeltaTime);
-
-            transform.position += new Vector3(
-                displacement.Horizontal,
-                0f,
-                displacement.Vertical);
+            var displacement = PlayerMovementRules.CalculateDisplacement(new PlanarMovement(input.MoveDirection.x, input.MoveDirection.y), MovementSpeed, Runner.DeltaTime);
+            transform.position += new Vector3(displacement.Horizontal, 0f, displacement.Vertical);
         }
     }
 }

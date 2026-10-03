@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "b2d98f8a30305e014f2086abdf7e0cfe2c5f1ba2",
-    "indexed_at": "2026-10-03T20:12:10Z",
+    "commit": "c38e1fe8ab8d69f80e5a01f43665c63d8c94c62e",
+    "indexed_at": "2026-10-03T20:16:34Z",
     "project": "multiplayer-shooter",
     "nodes": 7399,
-    "edges": 15763,
+    "edges": 15759,
     "original_size": 13893632,
-    "compressed_size": 1721066,
+    "compressed_size": 1720689,
     "compression_level": 3
 }
