@@ -65,7 +65,7 @@ Builds/Local/Logs/client-a.log
 Builds/Local/Logs/client-b.log
 ```
 
-Development clients also show role, PID, session, port applicability, and current network state in the upper-left corner. The dedicated server writes the same information with a `[LocalProcess]` prefix to its log.
+Development clients also show role, PID, session, port applicability, current network state, replicated match phase, connected player count, and phase time remaining in the upper-left corner. The dedicated server writes process information with a `[LocalProcess]` prefix to its log.
 
 The server also owns and replicates the local match phases:
 

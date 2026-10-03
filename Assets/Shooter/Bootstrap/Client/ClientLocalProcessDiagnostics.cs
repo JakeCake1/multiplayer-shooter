@@ -19,9 +19,10 @@ namespace Shooter.Bootstrap.Client
                 return;
             }
 
-            var overlayObject = new GameObject("Local Process Diagnostics");
+            var overlayObject = new GameObject("Local Client Diagnostics");
             Object.DontDestroyOnLoad(overlayObject);
             _overlay = overlayObject.AddComponent<LocalProcessDebugOverlay>();
+            overlayObject.AddComponent<MatchStateDebugOverlay>();
             _overlay.SetText(BuildText(state));
         }
 
