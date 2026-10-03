@@ -89,4 +89,10 @@ To preview which processes would be stopped without terminating them:
 .\StopLocalMatch.ps1 -WhatIf
 ```
 
-The stop script checks saved process IDs, start times, and executable paths before terminating processes. It does not stop the Unity Editor or players from other projects.
+The stop script checks saved process IDs, start times, and executable paths. It first asks the local builds to shut down their Fusion sessions cleanly, waits up to ten seconds, and force-stops only processes that do not exit. This prevents a Photon room from lingering and colliding with an immediate restart that uses the same session name. The graceful timeout can be overridden, or set to zero when testing the fallback:
+
+```powershell
+.\StopLocalMatch.ps1 -GracefulTimeoutSeconds 15
+```
+
+The script does not stop the Unity Editor or players from other projects.

@@ -58,5 +58,28 @@ namespace Shooter.Bootstrap.Tests
                     new[] { "ShooterClient.exe", "--shooter-session" }),
                 Throws.ArgumentException);
         }
+
+        [Test]
+        public void GetShutdownSignalPath_ReadsConfiguredPath()
+        {
+            var path = LocalNetworkLaunchArguments.GetShutdownSignalPath(
+                new[]
+                {
+                    "ShooterServer.exe",
+                    "--shooter-shutdown-signal",
+                    @"C:\temp\local-match.shutdown"
+                });
+
+            Assert.That(path, Is.EqualTo(@"C:\temp\local-match.shutdown"));
+        }
+
+        [Test]
+        public void GetShutdownSignalPath_ReturnsNullWhenOptionIsAbsent()
+        {
+            var path = LocalNetworkLaunchArguments.GetShutdownSignalPath(
+                new[] { "ShooterClient.exe" });
+
+            Assert.That(path, Is.Null);
+        }
     }
 }

@@ -59,15 +59,18 @@ $serverLog = Join-Path $logsPath "server.log"
 $clientALog = Join-Path $logsPath "client-a.log"
 $clientBLog = Join-Path $logsPath "client-b.log"
 $processStatePath = Join-Path $logsPath "local-match-processes.json"
+$shutdownSignalPath = Join-Path $logsPath "local-match.shutdown"
 
 # Avoid treating a successful line from a previous run as current readiness.
 Set-Content -LiteralPath $serverLog -Value "" -Encoding UTF8
+Remove-Item -LiteralPath $shutdownSignalPath -Force -ErrorAction SilentlyContinue
 
 $serverProcess = Start-Process `
     -FilePath $serverPath `
     -ArgumentList @(
         "--shooter-session", $SessionName,
         "--shooter-port", $Port,
+        "--shooter-shutdown-signal", $shutdownSignalPath,
         "-logFile", $serverLog) `
     -WindowStyle Hidden `
     -PassThru
@@ -93,12 +96,18 @@ Start-Sleep -Milliseconds 500
 
 $clientAProcess = Start-Process `
     -FilePath $clientPath `
-    -ArgumentList @("--shooter-session", $SessionName, "-logFile", $clientALog) `
+    -ArgumentList @(
+        "--shooter-session", $SessionName,
+        "--shooter-shutdown-signal", $shutdownSignalPath,
+        "-logFile", $clientALog) `
     -PassThru
 
 $clientBProcess = Start-Process `
     -FilePath $clientPath `
-    -ArgumentList @("--shooter-session", $SessionName, "-logFile", $clientBLog) `
+    -ArgumentList @(
+        "--shooter-session", $SessionName,
+        "--shooter-shutdown-signal", $shutdownSignalPath,
+        "-logFile", $clientBLog) `
     -PassThru
 
 $processState = @(
@@ -110,6 +119,7 @@ $processState = @(
         Session = $SessionName
         Port = $Port
         Log = $serverLog
+        ShutdownSignal = $shutdownSignalPath
     }
     [pscustomobject]@{
         Role = "Client A"
@@ -119,6 +129,7 @@ $processState = @(
         Session = $SessionName
         Port = "n/a"
         Log = $clientALog
+        ShutdownSignal = $shutdownSignalPath
     }
     [pscustomobject]@{
         Role = "Client B"
@@ -128,6 +139,7 @@ $processState = @(
         Session = $SessionName
         Port = "n/a"
         Log = $clientBLog
+        ShutdownSignal = $shutdownSignalPath
     }
 )
 

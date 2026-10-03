@@ -12,6 +12,7 @@ namespace Shooter.Bootstrap
 
         private const string SessionOption = "--shooter-session";
         private const string PortOption = "--shooter-port";
+        private const string ShutdownSignalOption = "--shooter-shutdown-signal";
 
         public static NetworkSessionStartRequest CreateRequest(
             NetworkSessionRole role,
@@ -32,6 +33,16 @@ namespace Shooter.Bootstrap
             var portText = ReadOption(arguments, PortOption);
             var port = portText == null ? DefaultServerPort : ParsePort(portText);
             return NetworkSessionStartRequest.ForServer(sessionName, port, PlayerCount);
+        }
+
+        public static string GetShutdownSignalPath(string[] arguments)
+        {
+            if (arguments == null)
+            {
+                throw new ArgumentNullException(nameof(arguments));
+            }
+
+            return ReadOption(arguments, ShutdownSignalOption);
         }
 
         private static string ReadOption(string[] arguments, string option)

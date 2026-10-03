@@ -1,8 +1,12 @@
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Medium")]
-param()
+param(
+    [ValidateRange(0, 60)]
+    [int]$GracefulTimeoutSeconds = 10
+)
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $processStatePath = Join-Path $projectRoot "Builds\Local\Logs\local-match-processes.json"
+$shutdownSignalPath = Join-Path $projectRoot "Builds\Local\Logs\local-match.shutdown"
 $targetPaths = @(
     Join-Path $projectRoot "Builds\Local\Server\ShooterServer.exe"
     Join-Path $projectRoot "Builds\Local\Client\ShooterClient.exe"
@@ -94,9 +98,11 @@ $matchingProcesses = @($trackedProcesses) + @($discoveredProcesses) |
 if ($matchingProcesses.Count -eq 0) {
     Write-Host "No local Shooter server or client processes are running."
 
-    if (Test-Path -LiteralPath $processStatePath) {
-        if ($PSCmdlet.ShouldProcess($processStatePath, "Remove stale local match process state")) {
-            Remove-Item -LiteralPath $processStatePath -Force
+    foreach ($stalePath in @($processStatePath, $shutdownSignalPath)) {
+        if (Test-Path -LiteralPath $stalePath) {
+            if ($PSCmdlet.ShouldProcess($stalePath, "Remove stale local match state")) {
+                Remove-Item -LiteralPath $stalePath -Force
+            }
         }
     }
 
@@ -105,7 +111,48 @@ if ($matchingProcesses.Count -eq 0) {
 
 $stoppedProcesses = @()
 $stopFailures = 0
-foreach ($process in $matchingProcesses) {
+
+if ($GracefulTimeoutSeconds -gt 0 -and
+    $PSCmdlet.ShouldProcess($shutdownSignalPath, "Request graceful local match shutdown")) {
+    Set-Content `
+        -LiteralPath $shutdownSignalPath `
+        -Value ([DateTime]::UtcNow.ToString("O")) `
+        -Encoding UTF8
+
+    Write-Host "Waiting up to $GracefulTimeoutSeconds seconds for Fusion sessions to shut down..."
+    $deadline = [DateTime]::UtcNow.AddSeconds($GracefulTimeoutSeconds)
+
+    do {
+        $runningProcessIds = @(
+            $matchingProcesses |
+                ForEach-Object { Get-Process -Id $_.Id -ErrorAction SilentlyContinue } |
+                ForEach-Object { $_.Id }
+        )
+
+        if ($runningProcessIds.Count -eq 0) {
+            break
+        }
+
+        Start-Sleep -Milliseconds 250
+    } while ([DateTime]::UtcNow -lt $deadline)
+
+    foreach ($process in $matchingProcesses) {
+        if ($process.Id -notin $runningProcessIds) {
+            $stoppedProcesses += [pscustomobject]@{
+                Process = $process.ProcessName
+                PID = $process.Id
+                Status = "Stopped gracefully"
+            }
+        }
+    }
+}
+
+$remainingProcesses = @(
+    $matchingProcesses |
+        ForEach-Object { Get-Process -Id $_.Id -ErrorAction SilentlyContinue }
+)
+
+foreach ($process in $remainingProcesses) {
     $description = "$($process.ProcessName) (PID $($process.Id))"
     if ($PSCmdlet.ShouldProcess($description, "Stop local match process")) {
         try {
@@ -113,7 +160,7 @@ foreach ($process in $matchingProcesses) {
             $stoppedProcesses += [pscustomobject]@{
                 Process = $process.ProcessName
                 PID = $process.Id
-                Status = "Stopped"
+                Status = "Force-stopped after timeout"
             }
         }
         catch {
@@ -127,8 +174,12 @@ if ($stoppedProcesses.Count -gt 0) {
     $stoppedProcesses | Format-Table -AutoSize
 }
 
-if ($stopFailures -eq 0 -and (Test-Path -LiteralPath $processStatePath)) {
-    if ($PSCmdlet.ShouldProcess($processStatePath, "Remove local match process state")) {
-        Remove-Item -LiteralPath $processStatePath -Force
+if ($stopFailures -eq 0) {
+    foreach ($statePath in @($processStatePath, $shutdownSignalPath)) {
+        if (Test-Path -LiteralPath $statePath) {
+            if ($PSCmdlet.ShouldProcess($statePath, "Remove local match state")) {
+                Remove-Item -LiteralPath $statePath -Force
+            }
+        }
     }
 }

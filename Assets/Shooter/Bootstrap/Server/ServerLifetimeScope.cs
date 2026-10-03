@@ -30,9 +30,11 @@ namespace Shooter.Bootstrap.Server
 
         protected override void Configure(IContainerBuilder builder)
         {
+            var arguments = Environment.GetCommandLineArgs();
             var request = LocalNetworkLaunchArguments.CreateRequest(
                 NetworkSessionRole.Server,
-                Environment.GetCommandLineArgs());
+                arguments);
+            var shutdownSignalPath = LocalNetworkLaunchArguments.GetShutdownSignalPath(arguments);
 
             var matchRules = new MatchRules(
                 requiredPlayerCount,
@@ -48,6 +50,12 @@ namespace Shooter.Bootstrap.Server
             builder.RegisterInstance(request);
             builder.RegisterEntryPoint<LocalProcessDiagnostics>();
             builder.RegisterEntryPoint<LocalNetworkSessionStarter>();
+
+            if (!string.IsNullOrWhiteSpace(shutdownSignalPath))
+            {
+                builder.RegisterInstance(new LocalShutdownSignal(shutdownSignalPath));
+                builder.RegisterEntryPoint<LocalShutdownWatcher>();
+            }
         }
     }
 }

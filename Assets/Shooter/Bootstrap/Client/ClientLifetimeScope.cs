@@ -17,9 +17,11 @@ namespace Shooter.Bootstrap.Client
 
         protected override void Configure(IContainerBuilder builder)
         {
+            var arguments = Environment.GetCommandLineArgs();
             var request = LocalNetworkLaunchArguments.CreateRequest(
                 NetworkSessionRole.Client,
-                Environment.GetCommandLineArgs());
+                arguments);
+            var shutdownSignalPath = LocalNetworkLaunchArguments.GetShutdownSignalPath(arguments);
 
             builder.RegisterInstance(new FusionNetworkSessionOptions(
                 playerPrefab,
@@ -28,6 +30,12 @@ namespace Shooter.Bootstrap.Client
             builder.RegisterInstance(request);
             builder.RegisterEntryPoint<LocalProcessDiagnostics>();
             builder.RegisterEntryPoint<LocalNetworkSessionStarter>();
+
+            if (!string.IsNullOrWhiteSpace(shutdownSignalPath))
+            {
+                builder.RegisterInstance(new LocalShutdownSignal(shutdownSignalPath));
+                builder.RegisterEntryPoint<LocalShutdownWatcher>();
+            }
         }
     }
 }
