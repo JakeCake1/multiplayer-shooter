@@ -2,25 +2,37 @@ using System;
 using Fusion;
 using Fusion.Sockets;
 using Shooter.Application;
+using Shooter.Features.MatchRules;
+using System.Threading.Tasks;
 
 namespace Shooter.Infrastructure.Fusion
 {
     public sealed class FusionServerNetworkSession : FusionNetworkSessionBase
     {
-        private readonly FusionNetworkSessionOptions _options;
+        private readonly FusionNetworkAssetLoader _assetLoader;
+        private readonly MatchRules _matchRules;
 
-        public FusionServerNetworkSession(FusionNetworkSessionOptions options)
+        public FusionServerNetworkSession(FusionNetworkAssetLoader assetLoader, MatchRules matchRules)
         {
-            _options = options ?? throw new ArgumentNullException(nameof(options));
+            _assetLoader = assetLoader ?? throw new ArgumentNullException(nameof(assetLoader));
+            _matchRules = matchRules ?? throw new ArgumentNullException(nameof(matchRules));
         }
 
         protected override NetworkSessionRole Role => NetworkSessionRole.Server;
+
+        protected override async Task PrepareAsync()
+        {
+            await _assetLoader.LoadAsync();
+        }
 
         protected override NetworkRunner CreateRunner()
         {
             var runner = CreateRunnerBase();
             runner.ProvideInput = false;
-            runner.gameObject.AddComponent<FusionServerPlayerSpawner>().Configure(_options.PlayerPrefab, _options.MatchStatePrefab, _options.MatchRules);
+            var matchController = runner.gameObject.AddComponent<FusionServerMatchController>();
+            matchController.Configure(_matchRules);
+            var assets = _assetLoader.Assets;
+            runner.gameObject.AddComponent<FusionServerPlayerSpawner>().Configure(assets.PlayerPrefab, assets.MatchStatePrefab, matchController);
             return runner;
         }
 

@@ -3,6 +3,8 @@ using Shooter.Bootstrap.Client;
 using Shooter.Bootstrap.Server;
 using Shooter.Infrastructure.Fusion;
 using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -25,31 +27,28 @@ namespace Shooter.Bootstrap.Editor
         [MenuItem("Shooter/Local Development/Create Bootstrap Scenes")]
         public static void CreateBootstrapScenesIfMissing()
         {
-            var playerPrefab = EnsurePlayerPrefab();
-            var matchStatePrefab = EnsureMatchStatePrefab();
-            EnsureScene<ClientLifetimeScope>(
-                ClientScenePath,
-                "Client Lifetime Scope",
-                playerPrefab,
-                matchStatePrefab,
-                includeClientPresentation: true);
-            EnsureScene<ServerLifetimeScope>(
-                ServerScenePath,
-                "Server Lifetime Scope",
-                playerPrefab,
-                matchStatePrefab,
-                includeClientPresentation: false);
+            EnsurePlayerPrefab();
+            EnsureMatchStatePrefab();
+            EnsureAddressableNetworkAssets();
+            EnsureScene<ClientLifetimeScope>(ClientScenePath, "Client Lifetime Scope", includeClientPresentation: true);
+            EnsureScene<ServerLifetimeScope>(ServerScenePath, "Server Lifetime Scope", includeClientPresentation: false);
+            EnsureBuildSettings();
             AssetDatabase.SaveAssets();
         }
 
-        private static GameObject EnsureMatchStatePrefab()
+        private static void EnsureMatchStatePrefab()
         {
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(MatchStatePrefabPath);
-            if (existing != null)
+            if (existing == null)
             {
-                return existing;
+                CreateMatchStatePrefab();
             }
 
+            EnsurePrefabComponent<FusionMatchStateObserver>(MatchStatePrefabPath);
+        }
+
+        private static void CreateMatchStatePrefab()
+        {
             Directory.CreateDirectory(Path.GetDirectoryName(MatchStatePrefabPath));
             var matchState = new GameObject("Match State");
 
@@ -57,7 +56,8 @@ namespace Shooter.Bootstrap.Editor
             {
                 matchState.AddComponent<global::Fusion.NetworkObject>();
                 matchState.AddComponent<FusionMatchState>();
-                return PrefabUtility.SaveAsPrefabAsset(matchState, MatchStatePrefabPath);
+                matchState.AddComponent<FusionMatchStateObserver>();
+                PrefabUtility.SaveAsPrefabAsset(matchState, MatchStatePrefabPath);
             }
             finally
             {
@@ -65,14 +65,19 @@ namespace Shooter.Bootstrap.Editor
             }
         }
 
-        private static GameObject EnsurePlayerPrefab()
+        private static void EnsurePlayerPrefab()
         {
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
             if (existing != null)
             {
-                return existing;
+                return;
             }
 
+            CreatePlayerPrefab();
+        }
+
+        private static void CreatePlayerPrefab()
+        {
             Directory.CreateDirectory(Path.GetDirectoryName(PlayerPrefabPath));
             var player = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             player.name = "Player";
@@ -82,7 +87,7 @@ namespace Shooter.Bootstrap.Editor
                 player.AddComponent<global::Fusion.NetworkObject>();
                 player.AddComponent<global::Fusion.NetworkTransform>();
                 player.AddComponent<FusionPlayerAvatar>();
-                return PrefabUtility.SaveAsPrefabAsset(player, PlayerPrefabPath);
+                PrefabUtility.SaveAsPrefabAsset(player, PlayerPrefabPath);
             }
             finally
             {
@@ -90,11 +95,68 @@ namespace Shooter.Bootstrap.Editor
             }
         }
 
+        private static void EnsurePrefabComponent<TComponent>(string prefabPath)
+            where TComponent : Component
+        {
+            var prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+
+            try
+            {
+                if (prefabRoot.GetComponent<TComponent>() == null)
+                {
+                    prefabRoot.AddComponent<TComponent>();
+                }
+
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        private static void EnsureAddressableNetworkAssets()
+        {
+            var settings = AddressableAssetSettingsDefaultObject.GetSettings(create: true);
+            if (settings.BuildAddressablesWithPlayerBuild != AddressableAssetSettings.PlayerBuildOption.BuildWithPlayer)
+            {
+                settings.BuildAddressablesWithPlayerBuild = AddressableAssetSettings.PlayerBuildOption.BuildWithPlayer;
+            }
+
+            MarkAddressable(settings, PlayerPrefabPath, FusionNetworkAssetAddresses.PlayerPrefab);
+            MarkAddressable(settings, MatchStatePrefabPath, FusionNetworkAssetAddresses.MatchStatePrefab);
+            EditorUtility.SetDirty(settings);
+        }
+
+        private static void MarkAddressable(AddressableAssetSettings settings, string assetPath, string address)
+        {
+            var guid = AssetDatabase.AssetPathToGUID(assetPath);
+            var entry = settings.CreateOrMoveEntry(guid, settings.DefaultGroup);
+            if (entry.address != address)
+            {
+                entry.SetAddress(address);
+            }
+        }
+
+        private static void EnsureBuildSettings()
+        {
+            var scenes = EditorBuildSettings.scenes;
+            if (HasExpectedBuildScenes(scenes))
+            {
+                return;
+            }
+
+            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ClientScenePath, enabled: true), new EditorBuildSettingsScene(ServerScenePath, enabled: true) };
+        }
+
+        private static bool HasExpectedBuildScenes(EditorBuildSettingsScene[] scenes)
+        {
+            return scenes.Length == 2 && scenes[0].enabled && scenes[0].path == ClientScenePath && scenes[1].enabled && scenes[1].path == ServerScenePath;
+        }
+
         private static void EnsureScene<TLifetimeScope>(
             string path,
             string rootName,
-            GameObject playerPrefab,
-            GameObject matchStatePrefab,
             bool includeClientPresentation)
             where TLifetimeScope : Component
         {
@@ -115,15 +177,6 @@ namespace Shooter.Bootstrap.Editor
                     SceneManager.MoveGameObjectToScene(root, scene);
                     lifetimeScope = root.AddComponent<TLifetimeScope>();
                 }
-
-                var serializedScope = new SerializedObject(lifetimeScope);
-                serializedScope.FindProperty("playerPrefab").objectReferenceValue = playerPrefab;
-                var matchStatePrefabProperty = serializedScope.FindProperty("matchStatePrefab");
-                if (matchStatePrefabProperty != null)
-                {
-                    matchStatePrefabProperty.objectReferenceValue = matchStatePrefab;
-                }
-                serializedScope.ApplyModifiedPropertiesWithoutUndo();
 
                 if (includeClientPresentation)
                 {

@@ -7,6 +7,8 @@
     "Shooter.Features.MatchRules",
     "Fusion.Unity",
     "Photon.Realtime",
+    "Unity.Addressables",
+    "Unity.ResourceManager",
     "Unity.InputSystem"
   ],
   "includePlatforms": [],

@@ -10,12 +10,6 @@ namespace Shooter.Bootstrap.Server
 {
     public sealed class ServerLifetimeScope : LifetimeScope
     {
-        [SerializeField]
-        private GameObject playerPrefab;
-
-        [SerializeField]
-        private GameObject matchStatePrefab;
-
         [SerializeField, Min(1)]
         private int requiredPlayerCount = 2;
 
@@ -40,10 +34,8 @@ namespace Shooter.Bootstrap.Server
                 matchSeconds,
                 finishingSeconds);
 
-            builder.RegisterInstance(new FusionNetworkSessionOptions(
-                playerPrefab,
-                matchStatePrefab,
-                matchRules));
+            builder.RegisterInstance(matchRules);
+            builder.Register<FusionNetworkAssetLoader>(Lifetime.Singleton);
             builder.Register<FusionServerNetworkSession>(Lifetime.Singleton).As<INetworkSession>();
             builder.RegisterInstance(request);
             builder.RegisterEntryPoint<ServerLocalProcessDiagnostics>();

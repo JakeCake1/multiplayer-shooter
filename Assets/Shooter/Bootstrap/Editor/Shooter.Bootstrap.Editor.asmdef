@@ -5,6 +5,7 @@
         "Shooter.Bootstrap",
         "Shooter.Infrastructure.Fusion",
         "Fusion.Unity",
+        "Unity.Addressables.Editor",
         "VContainer"
     ],
     "includePlatforms": [

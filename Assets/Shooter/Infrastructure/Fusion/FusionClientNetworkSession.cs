@@ -1,12 +1,26 @@
 using Fusion;
 using Fusion.Sockets;
 using Shooter.Application;
+using System;
+using System.Threading.Tasks;
 
 namespace Shooter.Infrastructure.Fusion
 {
     public sealed class FusionClientNetworkSession : FusionNetworkSessionBase
     {
+        private readonly FusionNetworkAssetLoader _assetLoader;
+
+        public FusionClientNetworkSession(FusionNetworkAssetLoader assetLoader)
+        {
+            _assetLoader = assetLoader ?? throw new ArgumentNullException(nameof(assetLoader));
+        }
+
         protected override NetworkSessionRole Role => NetworkSessionRole.Client;
+
+        protected override async Task PrepareAsync()
+        {
+            await _assetLoader.LoadAsync();
+        }
 
         protected override NetworkRunner CreateRunner()
         {

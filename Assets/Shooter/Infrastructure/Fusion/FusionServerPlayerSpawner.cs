@@ -1,6 +1,5 @@
 using System;
 using global::Fusion;
-using Shooter.Features.MatchRules;
 using UnityEngine;
 
 namespace Shooter.Infrastructure.Fusion
@@ -9,17 +8,17 @@ namespace Shooter.Infrastructure.Fusion
     {
         private GameObject _playerPrefab;
         private GameObject _matchStatePrefab;
-        private MatchRules _matchRules;
+        private FusionServerMatchController _matchController;
         private NetworkObject _matchStateObject;
 
         public void Configure(
             GameObject playerPrefab,
             GameObject matchStatePrefab,
-            MatchRules matchRules)
+            FusionServerMatchController matchController)
         {
-            _playerPrefab = playerPrefab;
-            _matchStatePrefab = matchStatePrefab;
-            _matchRules = matchRules;
+            _playerPrefab = playerPrefab != null ? playerPrefab : throw new ArgumentNullException(nameof(playerPrefab));
+            _matchStatePrefab = matchStatePrefab != null ? matchStatePrefab : throw new ArgumentNullException(nameof(matchStatePrefab));
+            _matchController = matchController != null ? matchController : throw new ArgumentNullException(nameof(matchController));
         }
 
         void IPlayerJoined.PlayerJoined(PlayerRef player)
@@ -57,19 +56,8 @@ namespace Shooter.Infrastructure.Fusion
                 return;
             }
 
-            if (_matchStatePrefab == null || _matchRules == null)
-            {
-                throw new InvalidOperationException(
-                    "Server match state prefab and rules must be configured before players join.");
-            }
-
-            _matchStateObject = Runner.Spawn(
-                _matchStatePrefab,
-                Vector3.zero,
-                Quaternion.identity,
-                inputAuthority: null,
-                onBeforeSpawned: (_, networkObject) =>
-                    networkObject.GetComponent<FusionMatchState>().Configure(_matchRules));
+            _matchStateObject = Runner.Spawn(_matchStatePrefab, Vector3.zero, Quaternion.identity);
+            _matchController.Attach(_matchStateObject.GetComponent<FusionMatchState>());
         }
     }
 }

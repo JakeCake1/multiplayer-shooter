@@ -142,6 +142,7 @@ Concrete Photon Fusion integration. Direct Fusion usage is expected here.
 Likely responsibilities:
 - runner lifecycle;
 - client/server network session;
+- Addressables-backed loading of Fusion network prefabs;
 - Fusion input bridge;
 - network player/avatar components;
 - network spawning;
@@ -150,6 +151,8 @@ Likely responsibilities:
 - server/client callbacks.
 
 Do not create project-owned equivalents for every Fusion primitive such as `INetworkVariable`, `INetworkObject`, `INetworkRPC`, etc. That would be a second networking framework and is explicitly not desired.
+
+The authoritative match adapter is split by responsibility: `FusionServerMatchController` advances pure `MatchStateMachine` rules, `FusionMatchState` contains only replicated state, and `FusionMatchStateObserver` handles client observation. Network prefabs are resolved through `FusionNetworkAssetLoader`; bootstrap scenes do not serialize prefab references.
 
 ### Infrastructure.PlayFab
 Concrete PlayFab integration:
@@ -188,6 +191,8 @@ Server composition may include:
 - score/timer.
 
 Dedicated server must not initialize client-only systems such as camera, HUD, audio, VFX, or local input readers.
+
+The client and server bootstrap scenes are the only scenes kept in Build Settings. Runtime scenes and content prefabs use Addressables. Local builds rebuild Addressables content with the player build so client and dedicated-server outputs receive the same network prefab catalog.
 
 ## Runtime Authority Model
 

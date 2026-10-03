@@ -31,6 +31,8 @@ Builds/Local/Server/ShooterServer.exe
 
 Both outputs are Development builds with Script Debugging enabled, so Rider can attach to either `ShooterClient` process or the `ShooterServer` process. The server build uses Unity's `StandaloneBuildSubtarget.Server`; it is not a headless client build.
 
+The build also rebuilds Addressables content. `Player` and `MatchState` are loaded by address at runtime and are no longer serialized into the bootstrap scenes.
+
 In Rider, use `Run > Attach to Unity Process` and select the exact PID printed by the local launcher.
 
 ## Run

@@ -55,6 +55,11 @@ namespace Shooter.Infrastructure.Fusion
 
         protected abstract StartGameArgs CreateStartGameArgs(NetworkSessionStartRequest request, NetworkRunner runner);
 
+        protected virtual Task PrepareAsync()
+        {
+            return Task.CompletedTask;
+        }
+
         protected NetworkRunner CreateRunnerBase()
         {
             var runnerObject = new GameObject($"Fusion NetworkRunner ({Role})");
@@ -73,6 +78,7 @@ namespace Shooter.Infrastructure.Fusion
             }
 
             LogStart(request);
+            await PrepareAsync();
             _runner = CreateRunner();
             var result = await _runner.StartGame(CreateStartGameArgs(request, _runner));
             return result.Ok ? HandleStartSuccess() : await HandleStartFailureAsync(request, result);
