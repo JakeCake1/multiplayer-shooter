@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Shooter.Bootstrap
+namespace Shooter.Bootstrap.Client
 {
     public sealed class LocalProcessDebugOverlay : MonoBehaviour
     {

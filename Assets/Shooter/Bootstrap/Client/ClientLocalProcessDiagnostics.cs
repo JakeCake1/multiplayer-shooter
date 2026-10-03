@@ -2,7 +2,7 @@ using Shooter.Application;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace Shooter.Bootstrap
+namespace Shooter.Bootstrap.Client
 {
     public sealed class ClientLocalProcessDiagnostics : LocalProcessDiagnosticsBase
     {

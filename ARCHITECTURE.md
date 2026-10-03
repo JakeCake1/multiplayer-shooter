@@ -171,9 +171,12 @@ Maintain distinct client and dedicated-server compositions, conceptually:
 ```text
 Bootstrap/
 ├── Client/
-│   └── ClientLifetimeScope
+│   ├── ClientLifetimeScope
+│   ├── ClientLocalProcessDiagnostics
+│   └── LocalProcessDebugOverlay
 └── Server/
-    └── ServerLifetimeScope
+    ├── ServerLifetimeScope
+    └── ServerLocalProcessDiagnostics
 ```
 
 Client composition may include:

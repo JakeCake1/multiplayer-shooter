@@ -1,6 +1,6 @@
 using Shooter.Application;
 
-namespace Shooter.Bootstrap
+namespace Shooter.Bootstrap.Server
 {
     public sealed class ServerLocalProcessDiagnostics : LocalProcessDiagnosticsBase
     {
