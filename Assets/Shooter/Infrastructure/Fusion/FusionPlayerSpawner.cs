@@ -1,4 +1,6 @@
+using System;
 using global::Fusion;
+using Shooter.Gameplay;
 using UnityEngine;
 
 namespace Shooter.Infrastructure.Fusion
@@ -6,10 +8,18 @@ namespace Shooter.Infrastructure.Fusion
     public sealed class FusionPlayerSpawner : SimulationBehaviour, IPlayerJoined, IPlayerLeft
     {
         private GameObject _playerPrefab;
+        private GameObject _matchStatePrefab;
+        private MatchRules _matchRules;
+        private NetworkObject _matchStateObject;
 
-        public void Configure(GameObject playerPrefab)
+        public void Configure(
+            GameObject playerPrefab,
+            GameObject matchStatePrefab,
+            MatchRules matchRules)
         {
             _playerPrefab = playerPrefab;
+            _matchStatePrefab = matchStatePrefab;
+            _matchRules = matchRules;
         }
 
         void IPlayerJoined.PlayerJoined(PlayerRef player)
@@ -19,6 +29,8 @@ namespace Shooter.Infrastructure.Fusion
             {
                 return;
             }
+
+            EnsureMatchStateSpawned();
 
             var horizontal = player.PlayerId % 2 == 0 ? 2f : -2f;
             var playerObject = Runner.Spawn(
@@ -36,6 +48,28 @@ namespace Shooter.Infrastructure.Fusion
             {
                 Runner.Despawn(playerObject);
             }
+        }
+
+        private void EnsureMatchStateSpawned()
+        {
+            if (_matchStateObject != null)
+            {
+                return;
+            }
+
+            if (_matchStatePrefab == null || _matchRules == null)
+            {
+                throw new InvalidOperationException(
+                    "Server match state prefab and rules must be configured before players join.");
+            }
+
+            _matchStateObject = Runner.Spawn(
+                _matchStatePrefab,
+                Vector3.zero,
+                Quaternion.identity,
+                inputAuthority: null,
+                onBeforeSpawned: (_, networkObject) =>
+                    networkObject.GetComponent<FusionMatchState>().Configure(_matchRules));
         }
     }
 }

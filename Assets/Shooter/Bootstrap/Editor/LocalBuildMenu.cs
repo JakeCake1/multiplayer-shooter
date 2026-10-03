@@ -42,6 +42,8 @@ namespace Shooter.Bootstrap.Editor
             string outputPath,
             StandaloneBuildSubtarget subtarget)
         {
+            LocalBootstrapSceneGenerator.CreateBootstrapScenesIfMissing();
+
             if (!File.Exists(scenePath))
             {
                 throw new BuildFailedException($"Required scene does not exist: {scenePath}");

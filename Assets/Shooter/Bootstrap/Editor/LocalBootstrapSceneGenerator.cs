@@ -14,6 +14,7 @@ namespace Shooter.Bootstrap.Editor
         private const string ClientScenePath = "Assets/Scenes/LocalClient.unity";
         private const string ServerScenePath = "Assets/Scenes/LocalServer.unity";
         private const string PlayerPrefabPath = "Assets/Shooter/Infrastructure/Fusion/Prefabs/Player.prefab";
+        private const string MatchStatePrefabPath = "Assets/Shooter/Infrastructure/Fusion/Prefabs/MatchState.prefab";
 
         [InitializeOnLoadMethod]
         private static void CreateMissingScenesAfterImport()
@@ -25,17 +26,43 @@ namespace Shooter.Bootstrap.Editor
         public static void CreateBootstrapScenesIfMissing()
         {
             var playerPrefab = EnsurePlayerPrefab();
+            var matchStatePrefab = EnsureMatchStatePrefab();
             EnsureScene<ClientLifetimeScope>(
                 ClientScenePath,
                 "Client Lifetime Scope",
                 playerPrefab,
+                matchStatePrefab,
                 includeClientPresentation: true);
             EnsureScene<ServerLifetimeScope>(
                 ServerScenePath,
                 "Server Lifetime Scope",
                 playerPrefab,
+                matchStatePrefab,
                 includeClientPresentation: false);
             AssetDatabase.SaveAssets();
+        }
+
+        private static GameObject EnsureMatchStatePrefab()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(MatchStatePrefabPath);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(MatchStatePrefabPath));
+            var matchState = new GameObject("Match State");
+
+            try
+            {
+                matchState.AddComponent<global::Fusion.NetworkObject>();
+                matchState.AddComponent<FusionMatchState>();
+                return PrefabUtility.SaveAsPrefabAsset(matchState, MatchStatePrefabPath);
+            }
+            finally
+            {
+                Object.DestroyImmediate(matchState);
+            }
         }
 
         private static GameObject EnsurePlayerPrefab()
@@ -67,6 +94,7 @@ namespace Shooter.Bootstrap.Editor
             string path,
             string rootName,
             GameObject playerPrefab,
+            GameObject matchStatePrefab,
             bool includeClientPresentation)
             where TLifetimeScope : Component
         {
@@ -90,6 +118,11 @@ namespace Shooter.Bootstrap.Editor
 
                 var serializedScope = new SerializedObject(lifetimeScope);
                 serializedScope.FindProperty("playerPrefab").objectReferenceValue = playerPrefab;
+                var matchStatePrefabProperty = serializedScope.FindProperty("matchStatePrefab");
+                if (matchStatePrefabProperty != null)
+                {
+                    matchStatePrefabProperty.objectReferenceValue = matchStatePrefab;
+                }
                 serializedScope.ApplyModifiedPropertiesWithoutUndo();
 
                 if (includeClientPresentation)

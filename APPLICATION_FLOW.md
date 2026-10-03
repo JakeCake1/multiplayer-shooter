@@ -333,6 +333,19 @@ Server composition must not instantiate the client flow coordinator, UI, camera,
 9. Implement PlayFab authentication, matchmaking, and allocation behind the existing application boundary.
 10. Add the failure and cancellation paths described above.
 
+### Current Local Match-Phase Slice
+
+Implementation step 6 uses a pure gameplay `MatchStateMachine` and a separate Fusion
+`Match State` network object. The server supplies connected-player count and simulation
+time to the gameplay rule, while Fusion only replicates the resulting phase, player count,
+and phase timer.
+
+The current local-development tuning is provisional and configurable on
+`ServerLifetimeScope`: two required players, a three-second countdown, a 60-second match,
+and a one-second finishing phase. If a player leaves during countdown, the server returns
+to `WaitingForPlayers`. Opponent disconnect semantics after `Playing` starts remain deferred
+until the combat/results slice.
+
 ## Decisions Deferred Until Their Vertical Slice
 
 - Exact C# names and signatures for capabilities and state variants.

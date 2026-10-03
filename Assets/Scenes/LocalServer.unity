@@ -153,6 +153,11 @@ MonoBehaviour:
   autoRun: 1
   autoInjectGameObjects: []
   playerPrefab: {fileID: 5453754859651628095, guid: a3c9b3ee863803f44b4d11c2e569900c, type: 3}
+  matchStatePrefab: {fileID: 222481253557401773, guid: 5516d3e8ce1f8d14e882a32773ec6e8d, type: 3}
+  requiredPlayerCount: 2
+  countdownSeconds: 3
+  matchSeconds: 60
+  finishingSeconds: 1
 --- !u!4 &648990380
 Transform:
   m_ObjectHideFlags: 0

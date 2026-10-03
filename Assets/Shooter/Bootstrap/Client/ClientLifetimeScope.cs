@@ -12,13 +12,18 @@ namespace Shooter.Bootstrap.Client
         [SerializeField]
         private GameObject playerPrefab;
 
+        [SerializeField]
+        private GameObject matchStatePrefab;
+
         protected override void Configure(IContainerBuilder builder)
         {
             var request = LocalNetworkLaunchArguments.CreateRequest(
                 NetworkSessionRole.Client,
                 Environment.GetCommandLineArgs());
 
-            builder.RegisterInstance(new FusionNetworkSessionOptions(playerPrefab));
+            builder.RegisterInstance(new FusionNetworkSessionOptions(
+                playerPrefab,
+                matchStatePrefab));
             builder.Register<FusionNetworkSession>(Lifetime.Singleton).As<INetworkSession>();
             builder.RegisterInstance(request);
             builder.RegisterEntryPoint<LocalProcessDiagnostics>();

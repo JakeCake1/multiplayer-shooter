@@ -59,6 +59,14 @@ Builds/Local/Logs/client-b.log
 
 Development clients also show role, PID, session, port applicability, and current network state in the upper-left corner. The dedicated server writes the same information with a `[LocalProcess]` prefix to its log.
 
+The server also owns and replicates the local match phases:
+
+```text
+WaitingForPlayers -> Starting -> Playing -> Finishing -> Finished
+```
+
+Phase transitions are written to server and client logs with a `[Match]` prefix. The current local tuning is two required players, a three-second countdown, a 60-second match, and a one-second finishing phase.
+
 All three processes must use the same Photon Fusion AppId and region configuration. The local UDP port is bound by the dedicated server; Fusion clients join the named session through Photon Cloud.
 
 ## Stop

@@ -137,7 +137,10 @@ namespace Shooter.Infrastructure.Fusion
 
             if (role == NetworkSessionRole.Server)
             {
-                runnerObject.AddComponent<FusionPlayerSpawner>().Configure(_options.PlayerPrefab);
+                runnerObject.AddComponent<FusionPlayerSpawner>().Configure(
+                    _options.PlayerPrefab,
+                    _options.MatchStatePrefab,
+                    _options.MatchRules);
             }
             else
             {
