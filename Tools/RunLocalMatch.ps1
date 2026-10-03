@@ -22,6 +22,7 @@ New-Item -ItemType Directory -Path $logsPath -Force | Out-Null
 $serverLog = Join-Path $logsPath "server.log"
 $clientALog = Join-Path $logsPath "client-a.log"
 $clientBLog = Join-Path $logsPath "client-b.log"
+$processStatePath = Join-Path $logsPath "local-match-processes.json"
 
 $serverProcess = Start-Process `
     -FilePath $serverPath `
@@ -44,10 +45,12 @@ $clientBProcess = Start-Process `
     -ArgumentList @("--shooter-session", $SessionName, "-logFile", $clientBLog) `
     -PassThru
 
-@(
+$processState = @(
     [pscustomobject]@{
         Role = "Server"
         PID = $serverProcess.Id
+        ExecutablePath = $serverPath
+        StartTimeUtc = $serverProcess.StartTime.ToUniversalTime().ToString("O")
         Session = $SessionName
         Port = $Port
         Log = $serverLog
@@ -55,6 +58,8 @@ $clientBProcess = Start-Process `
     [pscustomobject]@{
         Role = "Client A"
         PID = $clientAProcess.Id
+        ExecutablePath = $clientPath
+        StartTimeUtc = $clientAProcess.StartTime.ToUniversalTime().ToString("O")
         Session = $SessionName
         Port = "n/a"
         Log = $clientALog
@@ -62,8 +67,17 @@ $clientBProcess = Start-Process `
     [pscustomobject]@{
         Role = "Client B"
         PID = $clientBProcess.Id
+        ExecutablePath = $clientPath
+        StartTimeUtc = $clientBProcess.StartTime.ToUniversalTime().ToString("O")
         Session = $SessionName
         Port = "n/a"
         Log = $clientBLog
     }
-) | Format-Table -AutoSize
+)
+
+$processState | ConvertTo-Json | Set-Content -LiteralPath $processStatePath -Encoding UTF8
+$processState |
+    Select-Object Role, PID, Session, Port, Log |
+    Format-Table -AutoSize
+
+Write-Host "Stop all local match processes with: .\StopLocalMatch.ps1"

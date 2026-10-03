@@ -38,13 +38,13 @@ In Rider, use `Run > Attach to Unity Process` and select the exact PID printed b
 From PowerShell at the repository root:
 
 ```powershell
-.\Tools\RunLocalMatch.ps1
+.\RunLocalMatch.ps1
 ```
 
 Optional arguments:
 
 ```powershell
-.\Tools\RunLocalMatch.ps1 -SessionName test-2 -Port 28000
+.\RunLocalMatch.ps1 -SessionName test-2 -Port 28000
 ```
 
 The script launches the server first, waits briefly, then launches two clients. Use `W`, `A`, `S`, and `D` in the focused client window.
@@ -60,3 +60,19 @@ Builds/Local/Logs/client-b.log
 Development clients also show role, PID, session, port applicability, and current network state in the upper-left corner. The dedicated server writes the same information with a `[LocalProcess]` prefix to its log.
 
 All three processes must use the same Photon Fusion AppId and region configuration. The local UDP port is bound by the dedicated server; Fusion clients join the named session through Photon Cloud.
+
+## Stop
+
+To stop all dedicated server and client processes launched for the local match, run from PowerShell at the repository root:
+
+```powershell
+.\StopLocalMatch.ps1
+```
+
+To preview which processes would be stopped without terminating them:
+
+```powershell
+.\StopLocalMatch.ps1 -WhatIf
+```
+
+The stop script checks saved process IDs, start times, and executable paths before terminating processes. It does not stop the Unity Editor or players from other projects.

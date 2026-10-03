@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Fusion;
+using Fusion.Photon.Realtime;
 using Fusion.Sockets;
 using Shooter.Application;
 using UnityEngine;
@@ -39,6 +40,19 @@ namespace Shooter.Infrastructure.Fusion
 
             try
             {
+                if (!TryValidateConfiguration(out var configurationError))
+                {
+                    Debug.LogError($"[Fusion] {configurationError}");
+                    SetState(NetworkSessionState.Disconnected);
+                    return NetworkSessionStartResult.Failure(
+                        NetworkSessionError.InvalidConfiguration,
+                        configurationError);
+                }
+
+                Debug.Log(
+                    $"[Fusion] Starting {request.Role} session '{request.SessionName}'. " +
+                    $"Fusion AppId configured: true; region: {GetConfiguredRegion()}.");
+
                 _runner = CreateRunner(request.Role);
 
                 var result = await _runner.StartGame(new StartGameArgs
@@ -58,11 +72,20 @@ namespace Shooter.Infrastructure.Fusion
 
                 if (!result.Ok)
                 {
+                    var error = result.ShutdownReason == ShutdownReason.InvalidAuthentication
+                        ? NetworkSessionError.AuthenticationFailed
+                        : NetworkSessionError.ConnectionFailed;
+                    var detail = BuildFailureDetail(result);
+
+                    Debug.LogError(
+                        $"[Fusion] Failed to start {request.Role} session '{request.SessionName}': " +
+                        $"{error}. {detail}");
+
                     await DestroyRunnerAsync();
                     SetState(NetworkSessionState.Disconnected);
                     return NetworkSessionStartResult.Failure(
-                        NetworkSessionError.ConnectionFailed,
-                        result.ShutdownReason.ToString());
+                        error,
+                        detail);
                 }
 
                 SetState(NetworkSessionState.Connected);
@@ -70,11 +93,12 @@ namespace Shooter.Infrastructure.Fusion
             }
             catch (Exception exception)
             {
+                Debug.LogException(exception);
                 await DestroyRunnerAsync();
                 SetState(NetworkSessionState.Disconnected);
                 return NetworkSessionStartResult.Failure(
                     NetworkSessionError.UnexpectedFailure,
-                    exception.Message);
+                    $"{exception.GetType().Name}: {exception.Message}");
             }
         }
 
@@ -156,6 +180,48 @@ namespace Shooter.Infrastructure.Fusion
             {
                 MoveDirection = movement.normalized
             });
+        }
+
+        private static bool TryValidateConfiguration(out string error)
+        {
+            if (!PhotonAppSettings.TryGetGlobal(out var settings) || settings.AppSettings == null)
+            {
+                error = "PhotonAppSettings could not be loaded. Ensure the Fusion settings asset exists in a Resources folder.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(settings.AppSettings.AppIdFusion))
+            {
+                error =
+                    "Fusion AppId is missing. Set App Id Fusion in " +
+                    "Assets/Photon/Fusion/Resources/PhotonAppSettings.asset and rebuild the local players.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static string GetConfiguredRegion()
+        {
+            var region = PhotonAppSettings.Global.AppSettings.FixedRegion;
+            return string.IsNullOrWhiteSpace(region) ? "automatic" : region;
+        }
+
+        private static string BuildFailureDetail(StartGameResult result)
+        {
+            var detail = result.ShutdownReason.ToString();
+            if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+            {
+                detail += $". {result.ErrorMessage}";
+            }
+
+            if (result.ShutdownReason == ShutdownReason.InvalidAuthentication)
+            {
+                detail += ". Verify that App Id Fusion belongs to an active Photon Fusion application.";
+            }
+
+            return detail;
         }
 
         private async Task DestroyRunnerAsync()

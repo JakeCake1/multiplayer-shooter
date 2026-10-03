@@ -5,6 +5,7 @@
     "Shooter.Application",
     "Shooter.Gameplay",
     "Fusion.Unity",
+    "Photon.Realtime",
     "Unity.InputSystem"
   ],
   "includePlatforms": [],
