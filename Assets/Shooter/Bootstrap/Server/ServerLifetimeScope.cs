@@ -14,11 +14,14 @@ namespace Shooter.Bootstrap.Server
 
         protected override void Configure(IContainerBuilder builder)
         {
+            var request = LocalNetworkLaunchArguments.CreateRequest(
+                NetworkSessionRole.Server,
+                Environment.GetCommandLineArgs());
+
             builder.RegisterInstance(new FusionNetworkSessionOptions(playerPrefab));
             builder.Register<FusionNetworkSession>(Lifetime.Singleton).As<INetworkSession>();
-            builder.RegisterInstance(LocalNetworkLaunchArguments.CreateRequest(
-                NetworkSessionRole.Server,
-                Environment.GetCommandLineArgs()));
+            builder.RegisterInstance(request);
+            builder.RegisterEntryPoint<LocalProcessDiagnostics>();
             builder.RegisterEntryPoint<LocalNetworkSessionStarter>();
         }
     }

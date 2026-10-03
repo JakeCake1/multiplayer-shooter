@@ -12,7 +12,7 @@ namespace Shooter.Bootstrap.Editor
         private const string ClientBuildPath = "Builds/Local/Client/ShooterClient.exe";
         private const string ServerBuildPath = "Builds/Local/Server/ShooterServer.exe";
 
-        [MenuItem("Shooter/Local Development/Build Client")]
+        [MenuItem("Shooter/Local Development/Build Development Client")]
         public static void BuildClient()
         {
             Build(
@@ -21,7 +21,7 @@ namespace Shooter.Bootstrap.Editor
                 StandaloneBuildSubtarget.Player);
         }
 
-        [MenuItem("Shooter/Local Development/Build Dedicated Server")]
+        [MenuItem("Shooter/Local Development/Build Development Dedicated Server")]
         public static void BuildServer()
         {
             Build(
@@ -30,7 +30,7 @@ namespace Shooter.Bootstrap.Editor
                 StandaloneBuildSubtarget.Server);
         }
 
-        [MenuItem("Shooter/Local Development/Build Client and Dedicated Server")]
+        [MenuItem("Shooter/Local Development/Build Development Client and Dedicated Server")]
         public static void BuildAll()
         {
             BuildClient();
@@ -55,7 +55,7 @@ namespace Shooter.Bootstrap.Editor
                 locationPathName = outputPath,
                 target = BuildTarget.StandaloneWindows64,
                 subtarget = (int)subtarget,
-                options = BuildOptions.Development
+                options = BuildOptions.Development | BuildOptions.AllowDebugging
             });
 
             if (report.summary.result != BuildResult.Succeeded)

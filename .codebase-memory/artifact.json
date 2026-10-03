@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "e590e4a22458c6292f9ebf2186b6561417eb5cc4",
-    "indexed_at": "2026-10-01T14:49:10Z",
+    "commit": "92a8565f80c5ce4114bc6e3de9492e75da3dd208",
+    "indexed_at": "2026-10-03T06:20:51Z",
     "project": "multiplayer-shooter-desktop",
-    "nodes": 7141,
-    "edges": 15354,
-    "original_size": 14614528,
-    "compressed_size": 1683816,
+    "nodes": 7169,
+    "edges": 15403,
+    "original_size": 14680064,
+    "compressed_size": 1694596,
     "compression_level": 3
 }
