@@ -41,6 +41,7 @@ Treat the following as accepted unless the user explicitly asks to revisit them:
 17. Use Addressables for runtime game scenes and content prefabs. Keep only the minimal client and server bootstrap scenes in Build Settings.
 18. Keep no more than one project-owned C# class in a source file. Name the file after that class. Vendored and generated code are excluded.
 19. Organize gameplay by feature under `Assets/Shooter/Features/<FeatureName>`. Every feature owns its own `.asmdef`; new gameplay logic starts in a new or existing feature directory rather than a shared catch-all gameplay assembly.
+20. Until a feature has normal client-facing visual presentation, provide a client-only Development-build `DebugOverlay` that makes its behavior observable. When normal presentation makes that overlay redundant, ask the user for approval before removing it; never delete a feature `DebugOverlay` silently.
 
 ## Working Style for Codex
 - Before making a substantial architectural change, state the proposed change and why it respects the documented boundaries.
