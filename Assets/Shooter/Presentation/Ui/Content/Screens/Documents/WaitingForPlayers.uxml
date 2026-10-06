@@ -1,0 +1,5 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Shooter/Presentation/Ui/Content/Common/CommonStyle.uss?fileID=7433441132597879392&amp;guid=c1bc1295bf6328e4ca652533fbcf291e&amp;type=3#CommonStyle"/>
+    <ui:Label text="PlayersInfo" name="players-label" style="-unity-text-align: upper-center; margin-top: 196px;"/>
+    <ui:Label text="Countodown" name="countdown-label" style="-unity-text-align: upper-center; margin-top: 19px;"/>
+</ui:UXML>
