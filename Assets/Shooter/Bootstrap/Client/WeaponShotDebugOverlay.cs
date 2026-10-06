@@ -6,7 +6,8 @@ namespace Shooter.Bootstrap
 {
     public sealed class WeaponShotDebugOverlay : MonoBehaviour
     {
-        private const float VisibilitySeconds = 5f;
+        private const float ActivityVisibilitySeconds = 5f;
+        private const float RayVisibilitySeconds = 1f;
         private const float Width = 500f;
         private const float Top = 204f;
         private const float RowHeight = 22f;
@@ -102,7 +103,7 @@ namespace Shooter.Bootstrap
             _visiblePlayerIds.Clear();
             foreach (var pair in _lastShotTimes)
             {
-                if (Time.unscaledTime - pair.Value < VisibilitySeconds)
+                if (Time.unscaledTime - pair.Value < ActivityVisibilitySeconds)
                 {
                     _visiblePlayerIds.Add(pair.Key);
                 }
@@ -115,7 +116,7 @@ namespace Shooter.Bootstrap
         {
             foreach (var pair in _rays)
             {
-                pair.Value.enabled = _lastShotTimes.TryGetValue(pair.Key, out var lastShotTime) && Time.unscaledTime - lastShotTime < VisibilitySeconds;
+                pair.Value.enabled = _lastShotTimes.TryGetValue(pair.Key, out var lastShotTime) && Time.unscaledTime - lastShotTime < RayVisibilitySeconds;
             }
         }
 
