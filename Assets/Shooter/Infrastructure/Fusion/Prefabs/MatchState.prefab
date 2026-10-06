@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2089534408103213787}
   - component: {fileID: 2017661454437849402}
   - component: {fileID: 7471156646405193763}
+  - component: {fileID: 6928312700119858246}
   m_Layer: 0
   m_Name: MatchState
   m_TagString: Untagged
@@ -44,7 +45,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
   SortKey: 1392920613
   SendPriority: 1
@@ -54,6 +55,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 2017661454437849402}
   - {fileID: 7471156646405193763}
+  - {fileID: 6928312700119858246}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2017661454437849402
 MonoBehaviour:
@@ -81,3 +83,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6c582d6749b12e48bccf3582a606e95, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Shooter.Infrastructure.Fusion::Shooter.Infrastructure.Fusion.FusionMatchStateObserver
+--- !u!114 &6928312700119858246
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 222481253557401773}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7346438064e24e169da3bdbce0c0c0e3, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Shooter.Infrastructure.Fusion::Shooter.Infrastructure.Fusion.FusionMatchResultState
+  _HasResult:
+    RawValue: 0
+  _IsDraw:
+    RawValue: 0
+  _FirstPlayerId: 0
+  _FirstPlayerKills: 0
+  _SecondPlayerId: 0
+  _SecondPlayerKills: 0
+  _WinnerPlayerId: 0

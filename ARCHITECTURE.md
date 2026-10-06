@@ -166,6 +166,8 @@ The initial combat adapter sends fire and planar aim intent through Fusion input
 
 `FusionPlayerScoreState` stores each player's replicated kill count. `FusionServerWeapon` awards a kill only when its server-confirmed damage changes a living opponent to dead; the pure `PlayerScoreRules` feature owns the score increment rule. Clients only observe the replicated score.
 
+When the authoritative match leaves `Playing`, `FusionServerMatchResultPublisher` snapshots both replicated player scores, resolves the winner through pure `MatchResultRules`, and publishes the immutable result through `FusionMatchResultState` on the match-state network object. Client result presentation reads this snapshot rather than depending on player objects remaining spawned.
+
 Fusion `NetworkBehaviour` implementations live under `Infrastructure/Fusion/NetworkBehaviours/<FeatureName>` while remaining inside `Shooter.Infrastructure.Fusion`. This keeps network-facing components discoverable without creating an assembly per adapter.
 
 ### Infrastructure.PlayFab

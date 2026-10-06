@@ -9,18 +9,19 @@ namespace Shooter.Bootstrap.Editor
     {
         private static readonly Type[] MatchStateComponentTypes =
         {
-            typeof(global::Fusion.NetworkObject), 
-            typeof(FusionMatchState), 
-            typeof(FusionMatchStateObserver)
+            typeof(global::Fusion.NetworkObject),
+            typeof(FusionMatchState),
+            typeof(FusionMatchStateObserver),
+            typeof(FusionMatchResultState)
         };
 
         private static readonly Type[] PlayerComponentTypes =
         {
             typeof(global::Fusion.NetworkObject),
-            typeof(global::Fusion.NetworkTransform), 
+            typeof(global::Fusion.NetworkTransform),
             typeof(FusionPlayerAvatar),
-            typeof(FusionServerWeapon), 
-            typeof(FusionPlayerHealthState), 
+            typeof(FusionServerWeapon),
+            typeof(FusionPlayerHealthState),
             typeof(FusionServerPlayerRespawn),
             typeof(FusionPlayerScoreState)
         };
