@@ -211,6 +211,8 @@ Dedicated server must not initialize client-only systems such as camera, HUD, au
 
 The client and server bootstrap scenes are the only scenes kept in Build Settings. Runtime scenes and content prefabs use Addressables. Local builds rebuild Addressables content with the player build so client and dedicated-server outputs receive the same network prefab catalog.
 
+Bootstrap lifetime scopes own stable argument/configuration flow and delegate changing VContainer registrations to role-specific `ClientServiceComposition` and `ServerServiceComposition` classes. Client diagnostic lifetime is owned by `ClientLocalProcessDiagnostics`, while the extensible overlay list lives in `ClientDebugOverlayComposition`. Editor bootstrap generation follows the same split: `LocalBootstrapSceneGenerator` owns asset/scene persistence, while network-prefab and client-scene contents live in dedicated composition classes.
+
 ## Runtime Authority Model
 
 ### Server Authority

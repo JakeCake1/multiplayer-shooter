@@ -26,12 +26,7 @@ namespace Shooter.Bootstrap.Client
         {
             var overlayObject = new GameObject("Local Client Diagnostics");
             Object.DontDestroyOnLoad(overlayObject);
-            _overlay = overlayObject.AddComponent<LocalProcessDebugOverlay>();
-            overlayObject.AddComponent<MatchStateDebugOverlay>();
-            overlayObject.AddComponent<WeaponShotDebugOverlay>();
-            overlayObject.AddComponent<HealthDebugOverlay>();
-            overlayObject.AddComponent<RespawnDebugOverlay>();
-            overlayObject.AddComponent<ScoreDebugOverlay>();
+            _overlay = ClientDebugOverlayComposition.AttachTo(overlayObject);
             _overlay.SetText(BuildText(state));
         }
 

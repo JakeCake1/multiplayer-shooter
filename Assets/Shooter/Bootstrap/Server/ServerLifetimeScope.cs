@@ -1,7 +1,5 @@
 using System;
-using Shooter.Application;
 using Shooter.Features.MatchRules;
-using Shooter.Infrastructure.Fusion;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -27,25 +25,8 @@ namespace Shooter.Bootstrap.Server
             var arguments = Environment.GetCommandLineArgs();
             var request = LocalNetworkLaunchArguments.CreateServerRequest(arguments);
             var shutdownSignalPath = LocalNetworkLaunchArguments.GetShutdownSignalPath(arguments);
-
-            var matchRules = new MatchRules(
-                requiredPlayerCount,
-                countdownSeconds,
-                matchSeconds,
-                finishingSeconds);
-
-            builder.RegisterInstance(matchRules);
-            builder.Register<FusionNetworkAssetLoader>(Lifetime.Singleton);
-            builder.Register<FusionServerNetworkSession>(Lifetime.Singleton).As<INetworkSession>();
-            builder.RegisterInstance(request);
-            builder.RegisterEntryPoint<ServerLocalProcessDiagnostics>();
-            builder.RegisterEntryPoint<LocalNetworkSessionStarter>();
-
-            if (!string.IsNullOrWhiteSpace(shutdownSignalPath))
-            {
-                builder.RegisterInstance(new LocalShutdownSignal(shutdownSignalPath));
-                builder.RegisterEntryPoint<LocalShutdownWatcher>();
-            }
+            var matchRules = new MatchRules(requiredPlayerCount, countdownSeconds, matchSeconds, finishingSeconds);
+            ServerServiceComposition.Register(builder, matchRules, request, shutdownSignalPath);
         }
     }
 }

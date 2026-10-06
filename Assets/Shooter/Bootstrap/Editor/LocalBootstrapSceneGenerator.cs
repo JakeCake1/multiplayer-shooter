@@ -44,7 +44,7 @@ namespace Shooter.Bootstrap.Editor
                 CreateMatchStatePrefab();
             }
 
-            EnsurePrefabComponent<FusionMatchStateObserver>(MatchStatePrefabPath);
+            LocalNetworkPrefabComposition.EnsureMatchStateComponents(MatchStatePrefabPath);
         }
 
         private static void CreateMatchStatePrefab()
@@ -54,9 +54,7 @@ namespace Shooter.Bootstrap.Editor
 
             try
             {
-                matchState.AddComponent<global::Fusion.NetworkObject>();
-                matchState.AddComponent<FusionMatchState>();
-                matchState.AddComponent<FusionMatchStateObserver>();
+                LocalNetworkPrefabComposition.AddMatchStateComponents(matchState);
                 PrefabUtility.SaveAsPrefabAsset(matchState, MatchStatePrefabPath);
             }
             finally
@@ -73,10 +71,7 @@ namespace Shooter.Bootstrap.Editor
                 CreatePlayerPrefab();
             }
 
-            EnsurePrefabComponent<FusionServerWeapon>(PlayerPrefabPath);
-            EnsurePrefabComponent<FusionPlayerHealthState>(PlayerPrefabPath);
-            EnsurePrefabComponent<FusionServerPlayerRespawn>(PlayerPrefabPath);
-            EnsurePrefabComponent<FusionPlayerScoreState>(PlayerPrefabPath);
+            LocalNetworkPrefabComposition.EnsurePlayerComponents(PlayerPrefabPath);
         }
 
         private static void CreatePlayerPrefab()
@@ -87,38 +82,12 @@ namespace Shooter.Bootstrap.Editor
 
             try
             {
-                player.AddComponent<global::Fusion.NetworkObject>();
-                player.AddComponent<global::Fusion.NetworkTransform>();
-                player.AddComponent<FusionPlayerAvatar>();
-                player.AddComponent<FusionServerWeapon>();
-                player.AddComponent<FusionPlayerHealthState>();
-                player.AddComponent<FusionServerPlayerRespawn>();
-                player.AddComponent<FusionPlayerScoreState>();
+                LocalNetworkPrefabComposition.AddPlayerComponents(player);
                 PrefabUtility.SaveAsPrefabAsset(player, PlayerPrefabPath);
             }
             finally
             {
                 Object.DestroyImmediate(player);
-            }
-        }
-
-        private static void EnsurePrefabComponent<TComponent>(string prefabPath)
-            where TComponent : Component
-        {
-            var prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
-
-            try
-            {
-                if (prefabRoot.GetComponent<TComponent>() == null)
-                {
-                    prefabRoot.AddComponent<TComponent>();
-                }
-
-                PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
-            }
-            finally
-            {
-                PrefabUtility.UnloadPrefabContents(prefabRoot);
             }
         }
 
@@ -161,19 +130,11 @@ namespace Shooter.Bootstrap.Editor
             return scenes.Length == 2 && scenes[0].enabled && scenes[0].path == ClientScenePath && scenes[1].enabled && scenes[1].path == ServerScenePath;
         }
 
-        private static void EnsureScene<TLifetimeScope>(
-            string path,
-            string rootName,
-            bool includeClientPresentation)
-            where TLifetimeScope : Component
+        private static void EnsureScene<TLifetimeScope>(string path, string rootName, bool includeClientPresentation) where TLifetimeScope : Component
         {
             var loadedScene = SceneManager.GetSceneByPath(path);
             var wasLoaded = loadedScene.IsValid() && loadedScene.isLoaded;
-            var scene = wasLoaded
-                ? loadedScene
-                : File.Exists(path)
-                    ? EditorSceneManager.OpenScene(path, OpenSceneMode.Additive)
-                    : EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+            var scene = wasLoaded ? loadedScene : File.Exists(path) ? EditorSceneManager.OpenScene(path, OpenSceneMode.Additive) : EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
 
             try
             {
@@ -187,7 +148,7 @@ namespace Shooter.Bootstrap.Editor
 
                 if (includeClientPresentation)
                 {
-                    EnsureClientPresentation(scene);
+                    LocalClientSceneComposition.Ensure(scene);
                 }
 
                 if (!EditorSceneManager.SaveScene(scene, path))
@@ -204,54 +165,7 @@ namespace Shooter.Bootstrap.Editor
             }
         }
 
-        private static void EnsureClientPresentation(Scene scene)
-        {
-            if (FindRoot(scene, "Main Camera") == null)
-            {
-                var cameraObject = new GameObject("Main Camera");
-                SceneManager.MoveGameObjectToScene(cameraObject, scene);
-                cameraObject.tag = "MainCamera";
-                cameraObject.transform.SetPositionAndRotation(
-                    new Vector3(0f, 8f, -10f),
-                    Quaternion.Euler(30f, 0f, 0f));
-                cameraObject.AddComponent<Camera>();
-                cameraObject.AddComponent<AudioListener>();
-            }
-
-            if (FindRoot(scene, "Directional Light") == null)
-            {
-                var lightObject = new GameObject("Directional Light");
-                SceneManager.MoveGameObjectToScene(lightObject, scene);
-                lightObject.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
-                var light = lightObject.AddComponent<Light>();
-                light.type = LightType.Directional;
-            }
-
-            if (FindRoot(scene, "Ground") == null)
-            {
-                var ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                ground.name = "Ground";
-                SceneManager.MoveGameObjectToScene(ground, scene);
-                ground.transform.position = new Vector3(0f, -0.1f, 0f);
-                ground.transform.localScale = new Vector3(12f, 0.2f, 12f);
-            }
-        }
-
-        private static GameObject FindRoot(Scene scene, string name)
-        {
-            foreach (var root in scene.GetRootGameObjects())
-            {
-                if (root.name == name)
-                {
-                    return root;
-                }
-            }
-
-            return null;
-        }
-
-        private static TComponent FindComponentInScene<TComponent>(Scene scene)
-            where TComponent : Component
+        private static TComponent FindComponentInScene<TComponent>(Scene scene) where TComponent : Component
         {
             foreach (var root in scene.GetRootGameObjects())
             {
