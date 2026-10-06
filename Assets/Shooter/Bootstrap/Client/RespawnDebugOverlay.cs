@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Shooter.Bootstrap
 {
-    public sealed class RespawnDebugOverlay : MonoBehaviour
+    public sealed class RespawnDebugOverlay : DebugOverlay
     {
         private const float Width = 500f;
         private const float Top = 348f;
@@ -48,7 +48,7 @@ namespace Shooter.Bootstrap
 
         private void CollectRespawningPlayer(FusionServerPlayerRespawn respawn)
         {
-            if (respawn.Object == null || !respawn.IsRespawning)
+            if (!IsSpawned(respawn) || !respawn.IsRespawning)
             {
                 return;
             }
@@ -61,6 +61,11 @@ namespace Shooter.Bootstrap
         private void DrawRespawnRow(int playerId, int index)
         {
             var respawn = _respawnsByPlayer[playerId];
+            if (!IsSpawned(respawn))
+            {
+                return;
+            }
+
             var previousColor = GUI.color;
             GUI.color = ClientDebugPlayerColors.Get(playerId);
             GUI.Label(new Rect(24f, Top + 8f + RowHeight * index, Width - 24f, RowHeight), $"Player:{playerId} Respawn: {respawn.SecondsRemaining:0.0}s");

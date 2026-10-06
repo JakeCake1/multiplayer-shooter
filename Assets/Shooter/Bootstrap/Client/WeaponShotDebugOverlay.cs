@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Shooter.Bootstrap
 {
-    public sealed class WeaponShotDebugOverlay : MonoBehaviour
+    public sealed class WeaponShotDebugOverlay : DebugOverlay
     {
         private const float ActivityVisibilitySeconds = 5f;
         private const float RayVisibilitySeconds = 1f;
@@ -60,7 +60,7 @@ namespace Shooter.Bootstrap
 
         private void ObserveConfirmedShots(FusionServerWeapon weapon)
         {
-            if (weapon.Object == null)
+            if (!IsSpawned(weapon))
             {
                 return;
             }

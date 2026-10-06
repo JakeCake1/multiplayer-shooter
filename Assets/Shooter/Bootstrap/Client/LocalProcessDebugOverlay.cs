@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Shooter.Bootstrap.Client
 {
-    public sealed class LocalProcessDebugOverlay : MonoBehaviour
+    public sealed class LocalProcessDebugOverlay : DebugOverlay
     {
         private const float Width = 500f;
         private const float Height = 86f;

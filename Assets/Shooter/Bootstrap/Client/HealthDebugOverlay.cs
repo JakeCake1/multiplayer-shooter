@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Shooter.Bootstrap
 {
-    public sealed class HealthDebugOverlay : MonoBehaviour
+    public sealed class HealthDebugOverlay : DebugOverlay
     {
         private const float Width = 500f;
         private const float Top = 280f;
@@ -40,7 +40,7 @@ namespace Shooter.Bootstrap
             var healthStates = FindObjectsByType<FusionPlayerHealthState>(FindObjectsSortMode.None);
             foreach (var healthState in healthStates)
             {
-                if (healthState.Object != null)
+                if (IsSpawned(healthState))
                 {
                     _healthByPlayer[healthState.Object.InputAuthority.PlayerId] = healthState;
                 }
@@ -57,6 +57,11 @@ namespace Shooter.Bootstrap
         private void DrawHealthRow(int playerId, int index)
         {
             var healthState = _healthByPlayer[playerId];
+            if (!IsSpawned(healthState))
+            {
+                return;
+            }
+
             var previousColor = GUI.color;
             GUI.color = ClientDebugPlayerColors.Get(playerId);
             GUI.Label(new Rect(24f, Top + 8f + RowHeight * index, Width - 24f, RowHeight), $"Player:{playerId} Health: {healthState.CurrentHealth}/{healthState.MaxHealth}");

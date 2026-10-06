@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Shooter.Bootstrap.Client
 {
-    public sealed class MatchStateDebugOverlay : MonoBehaviour
+    public sealed class MatchStateDebugOverlay : DebugOverlay
     {
         private const float Width = 500f;
         private const float Height = 86f;
@@ -40,7 +40,7 @@ namespace Shooter.Bootstrap.Client
 
         private bool HasReplicatedState()
         {
-            return _matchState != null && _matchState.Object != null;
+            return IsSpawned(_matchState);
         }
     }
 }
