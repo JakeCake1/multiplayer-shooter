@@ -35,7 +35,7 @@ To clean both outputs and then rebuild both Development players, use:
 Shooter > Local Development > Build Development Client and Dedicated Server (Clean)
 ```
 
-Cleaning removes `Builds/Local/Client` and `Builds/Local/Server`, including executables, debug symbols, player data, and copied Addressables content. `Builds/Local/Logs` is preserved. Stop a running local match before cleaning because Windows may lock its executables.
+Cleaning removes `Builds/Local/Client` and `Builds/Local/Server`, including executables, debug symbols, player data, and copied Addressables content. `Builds/Local/Logs` is preserved. The clean rebuild command also invalidates Unity's incremental player-build cache for each target. Stop a running local match before cleaning because Windows may lock its executables.
 
 This creates:
 

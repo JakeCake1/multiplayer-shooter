@@ -51,8 +51,10 @@ namespace Shooter.Bootstrap.Editor
             var prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
             try
             {
-                AddMissingComponents(prefabRoot, componentTypes);
-                PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
+                if (AddMissingComponents(prefabRoot, componentTypes))
+                {
+                    PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
+                }
             }
             finally
             {
@@ -60,15 +62,19 @@ namespace Shooter.Bootstrap.Editor
             }
         }
 
-        private static void AddMissingComponents(GameObject target, Type[] componentTypes)
+        private static bool AddMissingComponents(GameObject target, Type[] componentTypes)
         {
+            var changed = false;
             foreach (var componentType in componentTypes)
             {
                 if (target.GetComponent(componentType) == null)
                 {
                     target.AddComponent(componentType);
+                    changed = true;
                 }
             }
+
+            return changed;
         }
     }
 }

@@ -94,24 +94,38 @@ namespace Shooter.Bootstrap.Editor
         private static void EnsureAddressableNetworkAssets()
         {
             var settings = AddressableAssetSettingsDefaultObject.GetSettings(create: true);
+            var changed = false;
             if (settings.BuildAddressablesWithPlayerBuild != AddressableAssetSettings.PlayerBuildOption.BuildWithPlayer)
             {
                 settings.BuildAddressablesWithPlayerBuild = AddressableAssetSettings.PlayerBuildOption.BuildWithPlayer;
+                changed = true;
             }
 
-            MarkAddressable(settings, PlayerPrefabPath, FusionNetworkAssetAddresses.PlayerPrefab);
-            MarkAddressable(settings, MatchStatePrefabPath, FusionNetworkAssetAddresses.MatchStatePrefab);
-            EditorUtility.SetDirty(settings);
+            changed |= MarkAddressable(settings, PlayerPrefabPath, FusionNetworkAssetAddresses.PlayerPrefab);
+            changed |= MarkAddressable(settings, MatchStatePrefabPath, FusionNetworkAssetAddresses.MatchStatePrefab);
+            if (changed)
+            {
+                EditorUtility.SetDirty(settings);
+            }
         }
 
-        private static void MarkAddressable(AddressableAssetSettings settings, string assetPath, string address)
+        private static bool MarkAddressable(AddressableAssetSettings settings, string assetPath, string address)
         {
             var guid = AssetDatabase.AssetPathToGUID(assetPath);
-            var entry = settings.CreateOrMoveEntry(guid, settings.DefaultGroup);
+            var entry = settings.FindAssetEntry(guid);
+            var changed = entry == null || entry.parentGroup != settings.DefaultGroup;
+            if (changed)
+            {
+                entry = settings.CreateOrMoveEntry(guid, settings.DefaultGroup);
+            }
+
             if (entry.address != address)
             {
                 entry.SetAddress(address);
+                changed = true;
             }
+
+            return changed;
         }
 
         private static void EnsureBuildSettings()
@@ -151,7 +165,7 @@ namespace Shooter.Bootstrap.Editor
                     LocalClientSceneComposition.Ensure(scene);
                 }
 
-                if (!EditorSceneManager.SaveScene(scene, path))
+                if (scene.isDirty && !EditorSceneManager.SaveScene(scene, path))
                 {
                     throw new IOException($"Unity could not save bootstrap scene '{path}'.");
                 }
