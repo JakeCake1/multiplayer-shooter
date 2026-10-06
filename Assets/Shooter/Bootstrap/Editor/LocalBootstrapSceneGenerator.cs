@@ -68,12 +68,12 @@ namespace Shooter.Bootstrap.Editor
         private static void EnsurePlayerPrefab()
         {
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
-            if (existing != null)
+            if (existing == null)
             {
-                return;
+                CreatePlayerPrefab();
             }
 
-            CreatePlayerPrefab();
+            EnsurePrefabComponent<FusionServerWeapon>(PlayerPrefabPath);
         }
 
         private static void CreatePlayerPrefab()
@@ -87,6 +87,7 @@ namespace Shooter.Bootstrap.Editor
                 player.AddComponent<global::Fusion.NetworkObject>();
                 player.AddComponent<global::Fusion.NetworkTransform>();
                 player.AddComponent<FusionPlayerAvatar>();
+                player.AddComponent<FusionServerWeapon>();
                 PrefabUtility.SaveAsPrefabAsset(player, PlayerPrefabPath);
             }
             finally

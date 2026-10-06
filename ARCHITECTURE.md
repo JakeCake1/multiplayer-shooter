@@ -11,7 +11,8 @@ Assets/
     ├── Core/
     ├── Features/
     │   ├── Player/
-    │   └── MatchRules/
+    │   ├── MatchRules/
+    │   └── Weapon/
     ├── Application/
     ├── Presentation/
     ├── Infrastructure/
@@ -30,6 +31,7 @@ Start with these assemblies (names may be refined only with a concrete reason):
 Shooter.Core
 Shooter.Features.Player
 Shooter.Features.MatchRules
+Shooter.Features.Weapon
 Shooter.Application
 Shooter.Presentation
 Shooter.Infrastructure.Fusion
@@ -85,7 +87,7 @@ Possible contents only when actually needed:
 Avoid "utility dumping ground" behavior.
 
 ### Features
-Each gameplay feature lives under `Assets/Shooter/Features/<FeatureName>`, owns its own assembly definition, and remains independent of the networking vendor. Current features are `Player` and `MatchRules`. Future gameplay behavior belongs to a new or existing feature rather than a shared catch-all gameplay assembly:
+Each gameplay feature lives under `Assets/Shooter/Features/<FeatureName>`, owns its own assembly definition, and remains independent of the networking vendor. Current features are `Player`, `MatchRules`, and `Weapon`. Future gameplay behavior belongs to a new or existing feature rather than a shared catch-all gameplay assembly:
 - health/damage rules;
 - weapon state/rules;
 - player gameplay state;

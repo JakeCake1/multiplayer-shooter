@@ -8,7 +8,14 @@ namespace Shooter.Infrastructure.Fusion
     {
         public static void Collect(NetworkRunner runner, NetworkInput networkInput)
         {
-            networkInput.Set(new FusionPlayerInput { MoveDirection = ReadMovement() });
+            var input = new FusionPlayerInput { MoveDirection = ReadMovement() };
+            input.Buttons.Set(FusionPlayerButton.Fire, IsFireHeld());
+            networkInput.Set(input);
+        }
+
+        private static bool IsFireHeld()
+        {
+            return Mouse.current != null && Mouse.current.leftButton.isPressed;
         }
 
         private static Vector2 ReadMovement()

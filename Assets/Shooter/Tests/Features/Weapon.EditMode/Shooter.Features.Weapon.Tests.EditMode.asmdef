@@ -1,0 +1,21 @@
+{
+  "name": "Shooter.Features.Weapon.Tests.EditMode",
+  "rootNamespace": "Shooter.Features.Weapon.Tests",
+  "references": [
+    "Shooter.Features.Weapon"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

@@ -19,10 +19,16 @@ namespace Shooter.Bootstrap.Client
                 return;
             }
 
+            CreateOverlay(state);
+        }
+
+        private void CreateOverlay(NetworkSessionState state)
+        {
             var overlayObject = new GameObject("Local Client Diagnostics");
             Object.DontDestroyOnLoad(overlayObject);
             _overlay = overlayObject.AddComponent<LocalProcessDebugOverlay>();
             overlayObject.AddComponent<MatchStateDebugOverlay>();
+            overlayObject.AddComponent<WeaponShotDebugOverlay>();
             _overlay.SetText(BuildText(state));
         }
 

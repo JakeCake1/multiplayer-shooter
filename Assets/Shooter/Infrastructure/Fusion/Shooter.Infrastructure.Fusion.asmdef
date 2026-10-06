@@ -5,6 +5,7 @@
     "Shooter.Application",
     "Shooter.Features.Player",
     "Shooter.Features.MatchRules",
+    "Shooter.Features.Weapon",
     "Fusion.Unity",
     "Photon.Realtime",
     "Unity.Addressables",
