@@ -28,14 +28,25 @@ namespace Shooter.Infrastructure.Fusion
 
         public int ApplyDamage(int damage)
         {
-            if (!Object.HasStateAuthority)
-            {
-                throw new InvalidOperationException("Only state authority can apply player damage.");
-            }
+            EnsureStateAuthority();
 
             var previousHealth = CurrentHealth;
             CurrentHealth = Rules.ApplyDamage(CurrentHealth, damage);
             return previousHealth - CurrentHealth;
+        }
+
+        public void RestoreFullHealth()
+        {
+            EnsureStateAuthority();
+            CurrentHealth = Rules.MaxHealth;
+        }
+
+        private void EnsureStateAuthority()
+        {
+            if (!Object.HasStateAuthority)
+            {
+                throw new InvalidOperationException("Only state authority can change player health.");
+            }
         }
     }
 }

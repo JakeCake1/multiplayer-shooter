@@ -160,6 +160,8 @@ The authoritative match adapter is split by responsibility: `FusionServerMatchCo
 
 The initial combat adapter sends fire and planar aim intent through Fusion input. `FusionServerWeapon` validates aim and fire cadence, performs the authoritative `Physics.Raycast`, applies damage through `FusionPlayerHealthState`, and replicates the most recent confirmed trace endpoints for client debug presentation; clients only observe these server results. This local baseline tests hits against the server's current simulation state and intentionally does not include lag compensation yet.
 
+`FusionServerPlayerRespawn` owns the server-only death countdown and restores full health at the player's original spawn position after three seconds. Replicated health gates movement and firing on both simulation paths, while the respawn timer is replicated only for client presentation. Pending respawns are cancelled when the authoritative match leaves `Playing`.
+
 Fusion `NetworkBehaviour` implementations live under `Infrastructure/Fusion/NetworkBehaviours/<FeatureName>` while remaining inside `Shooter.Infrastructure.Fusion`. This keeps network-facing components discoverable without creating an assembly per adapter.
 
 ### Infrastructure.PlayFab

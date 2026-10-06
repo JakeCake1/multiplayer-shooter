@@ -7,10 +7,17 @@ namespace Shooter.Infrastructure.Fusion
 {
     [RequireComponent(typeof(NetworkObject))]
     [RequireComponent(typeof(NetworkTransform))]
+    [RequireComponent(typeof(FusionPlayerHealthState))]
     public sealed class FusionPlayerAvatar : NetworkBehaviour
     {
         private const float MovementSpeed = 5f;
+        private FusionPlayerHealthState _healthState;
         private FusionMatchState _matchState;
+
+        public override void Spawned()
+        {
+            _healthState = GetComponent<FusionPlayerHealthState>();
+        }
 
         public override void FixedUpdateNetwork()
         {
@@ -30,7 +37,7 @@ namespace Shooter.Infrastructure.Fusion
         private bool CanAcceptGameplayInput()
         {
             ResolveMatchState();
-            return _matchState != null && MatchPhaseRules.AcceptsGameplayInput(_matchState.Phase);
+            return _matchState != null && MatchPhaseRules.AcceptsGameplayInput(_matchState.Phase) && !_healthState.IsDead;
         }
 
         private void ResolveMatchState()

@@ -6,12 +6,14 @@ using UnityEngine;
 namespace Shooter.Infrastructure.Fusion
 {
     [RequireComponent(typeof(NetworkObject))]
+    [RequireComponent(typeof(FusionPlayerHealthState))]
     public sealed class FusionServerWeapon : NetworkBehaviour
     {
         private const float RoundsPerMinute = 600f;
         private const float ShotOriginHeight = 0.5f;
         private const float ShotOriginForwardOffset = 0.6f;
         private static readonly AutomaticWeaponRules Rules = new AutomaticWeaponRules(RoundsPerMinute);
+        private FusionPlayerHealthState _healthState;
         private FusionMatchState _matchState;
 
         [Networked]
@@ -28,6 +30,7 @@ namespace Shooter.Infrastructure.Fusion
 
         public override void Spawned()
         {
+            _healthState = GetComponent<FusionPlayerHealthState>();
             enabled = Object.HasStateAuthority;
         }
 
@@ -54,7 +57,7 @@ namespace Shooter.Infrastructure.Fusion
         private bool CanAcceptFireInput()
         {
             ResolveMatchState();
-            return _matchState != null && MatchPhaseRules.AcceptsGameplayInput(_matchState.Phase);
+            return _matchState != null && MatchPhaseRules.AcceptsGameplayInput(_matchState.Phase) && !_healthState.IsDead;
         }
 
         private void ResolveMatchState()
