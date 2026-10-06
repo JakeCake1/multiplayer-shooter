@@ -9,6 +9,8 @@ namespace Shooter.Infrastructure.Fusion
     public sealed class FusionServerWeapon : NetworkBehaviour
     {
         private const float RoundsPerMinute = 600f;
+        private const float ShotOriginHeight = 0.5f;
+        private const float ShotOriginForwardOffset = 0.6f;
         private static readonly AutomaticWeaponRules Rules = new AutomaticWeaponRules(RoundsPerMinute);
         private FusionMatchState _matchState;
 
@@ -30,7 +32,7 @@ namespace Shooter.Infrastructure.Fusion
                 return;
             }
 
-            if (!GetInput(out FusionPlayerInput input) || !input.Buttons.IsSet(FusionPlayerButton.Fire))
+            if (!GetInput(out FusionPlayerInput input) || !input.Buttons.IsSet(FusionPlayerButton.Fire) || !TryGetShotDirection(input, out var shotDirection))
             {
                 return;
             }
@@ -40,7 +42,7 @@ namespace Shooter.Infrastructure.Fusion
                 return;
             }
 
-            ConfirmShot();
+            ConfirmShot(shotDirection);
         }
 
         private bool CanAcceptFireInput()
@@ -57,11 +59,45 @@ namespace Shooter.Infrastructure.Fusion
             }
         }
 
-        private void ConfirmShot()
+        private static bool TryGetShotDirection(FusionPlayerInput input, out Vector3 shotDirection)
+        {
+            var valid = WeaponAimRules.TryNormalize(input.AimDirection.x, input.AimDirection.y, out var aimDirection);
+            shotDirection = valid ? new Vector3(aimDirection.Horizontal, 0f, aimDirection.Vertical) : Vector3.zero;
+            return valid;
+        }
+
+        private void ConfirmShot(Vector3 shotDirection)
         {
             ConfirmedShotCount++;
             FireCooldown = TickTimer.CreateFromSeconds(Runner, Rules.SecondsBetweenShots);
-            Debug.Log($"[Weapon][Server] Confirmed shot {ConfirmedShotCount} for player {Object.InputAuthority}; interval: {Rules.SecondsBetweenShots:0.000}s.");
+            if (TryApplyDamage(shotDirection, out var target, out var appliedDamage))
+            {
+                Debug.Log($"[Weapon][Server] Confirmed shot {ConfirmedShotCount} for player {Object.InputAuthority}; hit {target.Object.InputAuthority}; damage: {appliedDamage}; health: {target.CurrentHealth}/{target.MaxHealth}.");
+                return;
+            }
+
+            Debug.Log($"[Weapon][Server] Confirmed shot {ConfirmedShotCount} for player {Object.InputAuthority}; miss; interval: {Rules.SecondsBetweenShots:0.000}s.");
+        }
+
+        private bool TryApplyDamage(Vector3 shotDirection, out FusionPlayerHealthState target, out int appliedDamage)
+        {
+            var shotOrigin = transform.position + Vector3.up * ShotOriginHeight + shotDirection * ShotOriginForwardOffset;
+            if (!Physics.Raycast(shotOrigin, shotDirection, out var hit, Rules.Range, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+            {
+                target = null;
+                appliedDamage = 0;
+                return false;
+            }
+
+            target = hit.collider.GetComponentInParent<FusionPlayerHealthState>();
+            if (target == null || target.Object == Object || target.IsDead)
+            {
+                appliedDamage = 0;
+                return false;
+            }
+
+            appliedDamage = target.ApplyDamage(Rules.DamagePerHit);
+            return appliedDamage > 0;
         }
     }
 }

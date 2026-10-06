@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 3254554893736897959}
   - component: {fileID: 7208625392393891980}
   - component: {fileID: 8839402196002937481}
+  - component: {fileID: 4710772213196408253}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -139,6 +140,7 @@ MonoBehaviour:
   - {fileID: 3254554893736897959}
   - {fileID: 7208625392393891980}
   - {fileID: 8839402196002937481}
+  - {fileID: 4710772213196408253}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &3254554893736897959
 MonoBehaviour:
@@ -206,3 +208,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Shooter.Infrastructure.Fusion::Shooter.Infrastructure.Fusion.FusionServerWeapon
   _ConfirmedShotCount: 0
+--- !u!114 &4710772213196408253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5453754859651628095}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 477221c5f43948749aa5d5477cb1ce3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Shooter.Infrastructure.Fusion::Shooter.Infrastructure.Fusion.FusionPlayerHealthState
+  _CurrentHealth: 0

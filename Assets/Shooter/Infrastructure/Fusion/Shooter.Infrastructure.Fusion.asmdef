@@ -6,6 +6,7 @@
     "Shooter.Features.Player",
     "Shooter.Features.MatchRules",
     "Shooter.Features.Weapon",
+    "Shooter.Features.Health",
     "Fusion.Unity",
     "Photon.Realtime",
     "Unity.Addressables",

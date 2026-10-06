@@ -8,9 +8,27 @@ namespace Shooter.Infrastructure.Fusion
     {
         public static void Collect(NetworkRunner runner, NetworkInput networkInput)
         {
-            var input = new FusionPlayerInput { MoveDirection = ReadMovement() };
+            var input = new FusionPlayerInput { MoveDirection = ReadMovement(), AimDirection = ReadAimDirection(runner) };
             input.Buttons.Set(FusionPlayerButton.Fire, IsFireHeld());
             networkInput.Set(input);
+        }
+
+        private static Vector2 ReadAimDirection(NetworkRunner runner)
+        {
+            if (Mouse.current == null || Camera.main == null || !runner.TryGetPlayerObject(runner.LocalPlayer, out var playerObject))
+            {
+                return Vector2.zero;
+            }
+
+            var pointerRay = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+            var aimPlane = new Plane(Vector3.up, playerObject.transform.position);
+            if (!aimPlane.Raycast(pointerRay, out var distance))
+            {
+                return Vector2.zero;
+            }
+
+            var worldDirection = pointerRay.GetPoint(distance) - playerObject.transform.position;
+            return new Vector2(worldDirection.x, worldDirection.z).normalized;
         }
 
         private static bool IsFireHeld()

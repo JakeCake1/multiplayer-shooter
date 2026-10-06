@@ -74,6 +74,7 @@ namespace Shooter.Bootstrap.Editor
             }
 
             EnsurePrefabComponent<FusionServerWeapon>(PlayerPrefabPath);
+            EnsurePrefabComponent<FusionPlayerHealthState>(PlayerPrefabPath);
         }
 
         private static void CreatePlayerPrefab()
@@ -88,6 +89,7 @@ namespace Shooter.Bootstrap.Editor
                 player.AddComponent<global::Fusion.NetworkTransform>();
                 player.AddComponent<FusionPlayerAvatar>();
                 player.AddComponent<FusionServerWeapon>();
+                player.AddComponent<FusionPlayerHealthState>();
                 PrefabUtility.SaveAsPrefabAsset(player, PlayerPrefabPath);
             }
             finally

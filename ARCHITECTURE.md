@@ -12,7 +12,8 @@ Assets/
     ├── Features/
     │   ├── Player/
     │   ├── MatchRules/
-    │   └── Weapon/
+    │   ├── Weapon/
+    │   └── Health/
     ├── Application/
     ├── Presentation/
     ├── Infrastructure/
@@ -32,6 +33,7 @@ Shooter.Core
 Shooter.Features.Player
 Shooter.Features.MatchRules
 Shooter.Features.Weapon
+Shooter.Features.Health
 Shooter.Application
 Shooter.Presentation
 Shooter.Infrastructure.Fusion
@@ -87,7 +89,7 @@ Possible contents only when actually needed:
 Avoid "utility dumping ground" behavior.
 
 ### Features
-Each gameplay feature lives under `Assets/Shooter/Features/<FeatureName>`, owns its own assembly definition, and remains independent of the networking vendor. Current features are `Player`, `MatchRules`, and `Weapon`. Future gameplay behavior belongs to a new or existing feature rather than a shared catch-all gameplay assembly:
+Each gameplay feature lives under `Assets/Shooter/Features/<FeatureName>`, owns its own assembly definition, and remains independent of the networking vendor. Current features are `Player`, `MatchRules`, `Weapon`, and `Health`. Future gameplay behavior belongs to a new or existing feature rather than a shared catch-all gameplay assembly:
 - health/damage rules;
 - weapon state/rules;
 - player gameplay state;
@@ -155,6 +157,8 @@ Likely responsibilities:
 Do not create project-owned equivalents for every Fusion primitive such as `INetworkVariable`, `INetworkObject`, `INetworkRPC`, etc. That would be a second networking framework and is explicitly not desired.
 
 The authoritative match adapter is split by responsibility: `FusionServerMatchController` advances pure `MatchStateMachine` rules, `FusionMatchState` contains only replicated state, and `FusionMatchStateObserver` handles client observation. `MatchPhaseRules` defines when gameplay input is accepted, while `FusionPlayerAvatar` applies that rule to the replicated phase on both the authoritative and predicted simulation paths. Network prefabs are resolved through `FusionNetworkAssetLoader`; bootstrap scenes do not serialize prefab references.
+
+The initial combat adapter sends fire and planar aim intent through Fusion input. `FusionServerWeapon` validates aim and fire cadence, performs the authoritative `Physics.Raycast`, and applies damage through `FusionPlayerHealthState`; clients only observe the replicated health value. This local baseline tests hits against the server's current simulation state and intentionally does not include lag compensation yet.
 
 Fusion `NetworkBehaviour` implementations live under `Infrastructure/Fusion/NetworkBehaviours/<FeatureName>` while remaining inside `Shooter.Infrastructure.Fusion`. This keeps network-facing components discoverable without creating an assembly per adapter.
 

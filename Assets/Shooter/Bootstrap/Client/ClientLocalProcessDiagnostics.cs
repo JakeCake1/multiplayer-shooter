@@ -29,6 +29,7 @@ namespace Shooter.Bootstrap.Client
             _overlay = overlayObject.AddComponent<LocalProcessDebugOverlay>();
             overlayObject.AddComponent<MatchStateDebugOverlay>();
             overlayObject.AddComponent<WeaponShotDebugOverlay>();
+            overlayObject.AddComponent<HealthDebugOverlay>();
             _overlay.SetText(BuildText(state));
         }
 

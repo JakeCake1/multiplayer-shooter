@@ -56,7 +56,7 @@ The script launches the server first and waits until its log reports `Network: C
 .\RunLocalMatch.ps1 -SessionName test-2 -Port 28000 -ServerReadyTimeoutSeconds 120
 ```
 
-Use `W`, `A`, `S`, and `D` to move in the focused client window. Hold the left mouse button to send automatic-fire intent; the dedicated server confirms shots only during the `Playing` phase and writes them with a `[Weapon][Server]` prefix.
+Use `W`, `A`, `S`, and `D` to move in the focused client window. Point at the other player and hold the left mouse button to send automatic-fire and aim intent; the dedicated server confirms shots only during the `Playing` phase, resolves the raycast, applies damage, and writes the result with a `[Weapon][Server]` prefix.
 
 After launch, PowerShell prints a process table with role, PID, session, server port, and log path. Logs are separated into:
 
@@ -66,7 +66,7 @@ Builds/Local/Logs/client-a.log
 Builds/Local/Logs/client-b.log
 ```
 
-Development clients also show role, PID, session, port applicability, current network state, replicated match phase, connected player count, phase time remaining, and recently active authoritative shot counters in the upper-left corner. A player's shot counter appears when its replicated total increases and disappears after five seconds without another confirmed shot. The dedicated server writes process information with a `[LocalProcess]` prefix to its log.
+Development clients also show role, PID, session, port applicability, current network state, replicated match phase, connected player count, phase time remaining, recently active authoritative shot counters, and replicated player health in the upper-left corner. A player's shot counter appears when its replicated total increases and disappears after five seconds without another confirmed shot. Health remains visible while the replicated player object exists. The dedicated server writes process information with a `[LocalProcess]` prefix to its log.
 
 The server also owns and replicates the local match phases:
 
