@@ -208,6 +208,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Shooter.Infrastructure.Fusion::Shooter.Infrastructure.Fusion.FusionServerWeapon
   _ConfirmedShotCount: 0
+  _LastShotOrigin: {x: 0, y: 0, z: 0}
+  _LastShotEnd: {x: 0, y: 0, z: 0}
 --- !u!114 &4710772213196408253
 MonoBehaviour:
   m_ObjectHideFlags: 0

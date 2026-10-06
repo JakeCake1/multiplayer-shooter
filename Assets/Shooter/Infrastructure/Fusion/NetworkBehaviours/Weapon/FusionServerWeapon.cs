@@ -18,6 +18,12 @@ namespace Shooter.Infrastructure.Fusion
         public int ConfirmedShotCount { get; private set; }
 
         [Networked]
+        public Vector3 LastShotOrigin { get; private set; }
+
+        [Networked]
+        public Vector3 LastShotEnd { get; private set; }
+
+        [Networked]
         private TickTimer FireCooldown { get; set; }
 
         public override void Spawned()
@@ -68,27 +74,35 @@ namespace Shooter.Infrastructure.Fusion
 
         private void ConfirmShot(Vector3 shotDirection)
         {
-            ConfirmedShotCount++;
-            FireCooldown = TickTimer.CreateFromSeconds(Runner, Rules.SecondsBetweenShots);
-            if (TryApplyDamage(shotDirection, out var target, out var appliedDamage))
-            {
-                Debug.Log($"[Weapon][Server] Confirmed shot {ConfirmedShotCount} for player {Object.InputAuthority}; hit {target.Object.InputAuthority}; damage: {appliedDamage}; health: {target.CurrentHealth}/{target.MaxHealth}.");
-                return;
-            }
-
-            Debug.Log($"[Weapon][Server] Confirmed shot {ConfirmedShotCount} for player {Object.InputAuthority}; miss; interval: {Rules.SecondsBetweenShots:0.000}s.");
+            RegisterConfirmedShot();
+            var shotOrigin = CalculateShotOrigin(shotDirection);
+            var didDamage = ResolveShot(shotOrigin, shotDirection, out var shotEnd, out var target, out var appliedDamage);
+            PublishShotTrace(shotOrigin, shotEnd);
+            LogShot(didDamage, target, appliedDamage);
         }
 
-        private bool TryApplyDamage(Vector3 shotDirection, out FusionPlayerHealthState target, out int appliedDamage)
+        private void RegisterConfirmedShot()
         {
-            var shotOrigin = transform.position + Vector3.up * ShotOriginHeight + shotDirection * ShotOriginForwardOffset;
+            ConfirmedShotCount++;
+            FireCooldown = TickTimer.CreateFromSeconds(Runner, Rules.SecondsBetweenShots);
+        }
+
+        private Vector3 CalculateShotOrigin(Vector3 shotDirection)
+        {
+            return transform.position + Vector3.up * ShotOriginHeight + shotDirection * ShotOriginForwardOffset;
+        }
+
+        private bool ResolveShot(Vector3 shotOrigin, Vector3 shotDirection, out Vector3 shotEnd, out FusionPlayerHealthState target, out int appliedDamage)
+        {
             if (!Physics.Raycast(shotOrigin, shotDirection, out var hit, Rules.Range, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
             {
+                shotEnd = shotOrigin + shotDirection * Rules.Range;
                 target = null;
                 appliedDamage = 0;
                 return false;
             }
 
+            shotEnd = hit.point;
             target = hit.collider.GetComponentInParent<FusionPlayerHealthState>();
             if (target == null || target.Object == Object || target.IsDead)
             {
@@ -98,6 +112,23 @@ namespace Shooter.Infrastructure.Fusion
 
             appliedDamage = target.ApplyDamage(Rules.DamagePerHit);
             return appliedDamage > 0;
+        }
+
+        private void PublishShotTrace(Vector3 shotOrigin, Vector3 shotEnd)
+        {
+            LastShotOrigin = shotOrigin;
+            LastShotEnd = shotEnd;
+        }
+
+        private void LogShot(bool didDamage, FusionPlayerHealthState target, int appliedDamage)
+        {
+            if (didDamage)
+            {
+                Debug.Log($"[Weapon][Server] Confirmed shot {ConfirmedShotCount} for player {Object.InputAuthority}; hit {target.Object.InputAuthority}; damage: {appliedDamage}; health: {target.CurrentHealth}/{target.MaxHealth}.");
+                return;
+            }
+
+            Debug.Log($"[Weapon][Server] Confirmed shot {ConfirmedShotCount} for player {Object.InputAuthority}; miss; interval: {Rules.SecondsBetweenShots:0.000}s.");
         }
     }
 }
