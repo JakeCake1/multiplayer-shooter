@@ -1,0 +1,14 @@
+{
+  "name": "Shooter.Features.Score",
+  "rootNamespace": "Shooter.Features.Score",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

@@ -13,7 +13,8 @@ Assets/
     │   ├── Player/
     │   ├── MatchRules/
     │   ├── Weapon/
-    │   └── Health/
+    │   ├── Health/
+    │   └── Score/
     ├── Application/
     ├── Presentation/
     ├── Infrastructure/
@@ -34,6 +35,7 @@ Shooter.Features.Player
 Shooter.Features.MatchRules
 Shooter.Features.Weapon
 Shooter.Features.Health
+Shooter.Features.Score
 Shooter.Application
 Shooter.Presentation
 Shooter.Infrastructure.Fusion
@@ -89,7 +91,7 @@ Possible contents only when actually needed:
 Avoid "utility dumping ground" behavior.
 
 ### Features
-Each gameplay feature lives under `Assets/Shooter/Features/<FeatureName>`, owns its own assembly definition, and remains independent of the networking vendor. Current features are `Player`, `MatchRules`, `Weapon`, and `Health`. Future gameplay behavior belongs to a new or existing feature rather than a shared catch-all gameplay assembly:
+Each gameplay feature lives under `Assets/Shooter/Features/<FeatureName>`, owns its own assembly definition, and remains independent of the networking vendor. Current features are `Player`, `MatchRules`, `Weapon`, `Health`, and `Score`. Future gameplay behavior belongs to a new or existing feature rather than a shared catch-all gameplay assembly:
 - health/damage rules;
 - weapon state/rules;
 - player gameplay state;
@@ -161,6 +163,8 @@ The authoritative match adapter is split by responsibility: `FusionServerMatchCo
 The initial combat adapter sends fire and planar aim intent through Fusion input. `FusionServerWeapon` validates aim and fire cadence, performs the authoritative `Physics.Raycast`, applies damage through `FusionPlayerHealthState`, and replicates the most recent confirmed trace endpoints for client debug presentation; clients only observe these server results. This local baseline tests hits against the server's current simulation state and intentionally does not include lag compensation yet.
 
 `FusionServerPlayerRespawn` owns the server-only death countdown and restores full health at the player's original spawn position after three seconds. Replicated health gates movement and firing on both simulation paths, while the respawn timer is replicated only for client presentation. Pending respawns are cancelled when the authoritative match leaves `Playing`.
+
+`FusionPlayerScoreState` stores each player's replicated kill count. `FusionServerWeapon` awards a kill only when its server-confirmed damage changes a living opponent to dead; the pure `PlayerScoreRules` feature owns the score increment rule. Clients only observe the replicated score.
 
 Fusion `NetworkBehaviour` implementations live under `Infrastructure/Fusion/NetworkBehaviours/<FeatureName>` while remaining inside `Shooter.Infrastructure.Fusion`. This keeps network-facing components discoverable without creating an assembly per adapter.
 

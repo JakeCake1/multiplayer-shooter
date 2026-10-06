@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 8839402196002937481}
   - component: {fileID: 4710772213196408253}
   - component: {fileID: 6224057028559031476}
+  - component: {fileID: 8115648175667736201}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -143,6 +144,7 @@ MonoBehaviour:
   - {fileID: 8839402196002937481}
   - {fileID: 4710772213196408253}
   - {fileID: 6224057028559031476}
+  - {fileID: 8115648175667736201}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &3254554893736897959
 MonoBehaviour:
@@ -240,3 +242,16 @@ MonoBehaviour:
   _IsRespawning:
     RawValue: 0
   _RespawnCount: 0
+--- !u!114 &8115648175667736201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5453754859651628095}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f9f4beb912741e2a4a5a66db7c71c55, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Shooter.Infrastructure.Fusion::Shooter.Infrastructure.Fusion.FusionPlayerScoreState
+  _Kills: 0

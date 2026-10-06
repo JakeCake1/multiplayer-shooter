@@ -7,6 +7,7 @@ namespace Shooter.Infrastructure.Fusion
 {
     [RequireComponent(typeof(NetworkObject))]
     [RequireComponent(typeof(FusionPlayerHealthState))]
+    [RequireComponent(typeof(FusionPlayerScoreState))]
     public sealed class FusionServerWeapon : NetworkBehaviour
     {
         private const float RoundsPerMinute = 600f;
@@ -14,6 +15,7 @@ namespace Shooter.Infrastructure.Fusion
         private const float ShotOriginForwardOffset = 0.6f;
         private static readonly AutomaticWeaponRules Rules = new AutomaticWeaponRules(RoundsPerMinute);
         private FusionPlayerHealthState _healthState;
+        private FusionPlayerScoreState _scoreState;
         private FusionMatchState _matchState;
 
         [Networked]
@@ -31,6 +33,7 @@ namespace Shooter.Infrastructure.Fusion
         public override void Spawned()
         {
             _healthState = GetComponent<FusionPlayerHealthState>();
+            _scoreState = GetComponent<FusionPlayerScoreState>();
             enabled = Object.HasStateAuthority;
         }
 
@@ -114,7 +117,19 @@ namespace Shooter.Infrastructure.Fusion
             }
 
             appliedDamage = target.ApplyDamage(Rules.DamagePerHit);
+            AwardKillIfTargetDied(target);
             return appliedDamage > 0;
+        }
+
+        private void AwardKillIfTargetDied(FusionPlayerHealthState target)
+        {
+            if (!target.IsDead)
+            {
+                return;
+            }
+
+            _scoreState.AwardKill();
+            Debug.Log($"[Score][Server] Awarded kill to player {Object.InputAuthority}; score: {_scoreState.Kills}.");
         }
 
         private void PublishShotTrace(Vector3 shotOrigin, Vector3 shotEnd)

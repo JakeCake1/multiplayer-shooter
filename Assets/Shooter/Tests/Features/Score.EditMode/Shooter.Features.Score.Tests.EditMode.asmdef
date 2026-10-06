@@ -1,0 +1,21 @@
+{
+  "name": "Shooter.Features.Score.Tests.EditMode",
+  "rootNamespace": "Shooter.Features.Score.Tests",
+  "references": [
+    "Shooter.Features.Score"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

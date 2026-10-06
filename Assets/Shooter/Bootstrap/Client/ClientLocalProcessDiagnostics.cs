@@ -31,6 +31,7 @@ namespace Shooter.Bootstrap.Client
             overlayObject.AddComponent<WeaponShotDebugOverlay>();
             overlayObject.AddComponent<HealthDebugOverlay>();
             overlayObject.AddComponent<RespawnDebugOverlay>();
+            overlayObject.AddComponent<ScoreDebugOverlay>();
             _overlay.SetText(BuildText(state));
         }
 
