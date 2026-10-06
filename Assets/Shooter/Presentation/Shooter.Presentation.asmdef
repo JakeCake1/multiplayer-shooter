@@ -2,7 +2,9 @@
   "name": "Shooter.Presentation",
   "rootNamespace": "Shooter.Presentation",
   "references": [
-    "Shooter.Application"
+    "Shooter.Application",
+    "Unity.Addressables",
+    "Unity.ResourceManager"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

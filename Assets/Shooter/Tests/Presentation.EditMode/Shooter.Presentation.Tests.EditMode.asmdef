@@ -1,8 +1,7 @@
 {
-  "name": "Shooter.Application.Tests.EditMode",
-  "rootNamespace": "Shooter.Application.Tests",
+  "name": "Shooter.Presentation.Tests.EditMode",
+  "rootNamespace": "Shooter.Presentation.Tests",
   "references": [
-    "Shooter.Core",
     "Shooter.Application",
     "Shooter.Presentation"
   ],

@@ -11,9 +11,12 @@ namespace Shooter.Bootstrap.Client
         {
             builder.Register<FusionNetworkAssetLoader>(Lifetime.Singleton);
             builder.Register<FusionClientNetworkSession>(Lifetime.Singleton).As<INetworkSession>();
+            builder.Register<UnityApplicationQuitter>(Lifetime.Singleton).As<IApplicationQuitter>();
+            builder.Register<ClientFlowCoordinator>(Lifetime.Singleton).As<IClientFlowController>();
             builder.RegisterInstance(request);
             builder.RegisterEntryPoint<ClientLocalProcessDiagnostics>();
-            builder.RegisterEntryPoint<LocalNetworkSessionStarter>();
+            builder.RegisterEntryPoint<ClientFlowPresentation>();
+            builder.RegisterEntryPoint<ClientMatchFlowBridge>();
             LocalShutdownServiceComposition.Register(builder, shutdownSignalPath);
         }
     }

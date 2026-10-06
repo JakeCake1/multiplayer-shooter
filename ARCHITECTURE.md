@@ -142,6 +142,8 @@ Client-facing behavior:
 
 Presentation invokes application capabilities. It does not invoke PlayFab SDK calls directly.
 
+Client flow UI follows MVVM. `ClientFlowUiPresenter` converts observed application flow into a screen request through `ClientFlowScreenFactory`; `UiController` contains only stable Addressable screen lifecycle behavior; each UI Toolkit View binds a typed, Unity-independent ViewModel. Screen selection and ViewModel construction remain outside `UiController`, so adding a screen extends the mapping without changing resource lifecycle code. Runtime UI prefabs are Addressables and own their `UIDocument`, UXML, USS, and View component.
+
 ### Infrastructure.Fusion
 Concrete Photon Fusion integration. Direct Fusion usage is expected here.
 

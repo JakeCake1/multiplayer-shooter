@@ -70,6 +70,8 @@ The script launches the server first and waits until its log reports `Network: C
 .\RunLocalMatch.ps1 -SessionName test-2 -Port 28000 -ServerReadyTimeoutSeconds 120
 ```
 
+Each client opens on the local main menu. Select `Find Game` in both client windows to connect them to the session started by the script. The screen then follows the authoritative lifecycle through connecting, waiting/countdown, play, and results; `Find Game Again` disconnects the completed Fusion session before reconnecting.
+
 Use `W`, `A`, `S`, and `D` to move in the focused client window. Point at the other player and hold the left mouse button to send automatic-fire and aim intent; the dedicated server confirms shots only during the `Playing` phase, resolves the raycast, applies damage, and writes the result with a `[Weapon][Server]` prefix.
 
 After launch, PowerShell prints a process table with role, PID, session, server port, and log path. Logs are separated into:

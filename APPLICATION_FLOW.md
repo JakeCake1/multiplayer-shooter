@@ -346,6 +346,25 @@ and a one-second finishing phase. If a player leaves during countdown, the serve
 to `WaitingForPlayers`. Opponent disconnect semantics after `Playing` starts remain deferred
 until the combat/results slice.
 
+### Current Local Client-Presentation Slice
+
+The local client now starts in an application-owned `Menu` state instead of starting Fusion from a bootstrap entry point. `ClientFlowCoordinator` owns `Menu -> Connecting -> WaitingForPlayers -> Playing -> Results`, invokes the existing `INetworkSession`, and retains project-owned snapshots only. A bootstrap bridge translates the replicated Fusion match phase and immutable result into those snapshots; the UI Toolkit view observes `IClientFlowController` and does not reference Fusion.
+
+`Find Game Again` first stops the completed network session and then starts the configured local session again. Connection failures return to `Menu` with a recoverable problem, while Exit is routed through `IApplicationQuitter`. Authentication and PlayFab-backed `Searching` remain the next backend slice; the local client currently moves directly from Menu to Connecting.
+
+The production UI replacement uses MVVM inside `Shooter.Presentation`. `ClientFlowUiPresenter` observes application snapshots, `ClientFlowScreenFactory` owns the extensible state-to-screen/ViewModel mapping, and the stable `UiController` owns Addressables instantiation, rebinding, stale-load rejection, and release. Views know only their typed ViewModel and named UI Toolkit elements; ViewModels do not reference Unity, Fusion, PlayFab, or Addressables.
+
+The current programmatic `ClientFlowView` remains the active fallback until the following GameObject prefabs are prepared and registered as Addressables. Each prefab must contain a `UIDocument` and its corresponding View component on the same GameObject:
+
+| Address | View component | Required named elements |
+|---|---|---|
+| `ui/screens/main-menu` | `MainMenuView` | `find-game-button`, `exit-button`, `problem-label` |
+| `ui/screens/connecting` | `ConnectingView` | `status-label` |
+| `ui/screens/waiting-for-players` | `WaitingForPlayersView` | `players-label`, `countdown-label` |
+| `ui/screens/results` | `ResultsView` | `outcome-label`, `first-player-score-label`, `second-player-score-label`, `find-game-again-button`, `exit-button` |
+
+After all four assets exist, Bootstrap can replace `ClientFlowPresentation` with the new presenter composition in one small change. Keeping this activation separate prevents a missing Addressable or incomplete UXML document from removing the currently working local menu.
+
 ## Decisions Deferred Until Their Vertical Slice
 
 - Exact C# names and signatures for capabilities and state variants.
