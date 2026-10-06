@@ -23,6 +23,20 @@ In Unity, use:
 Shooter > Local Development > Build Development Client and Dedicated Server
 ```
 
+To delete the existing client and dedicated-server outputs without starting a build, use:
+
+```text
+Shooter > Local Development > Clean Builds
+```
+
+To clean both outputs and then rebuild both Development players, use:
+
+```text
+Shooter > Local Development > Build Development Client and Dedicated Server (Clean)
+```
+
+Cleaning removes `Builds/Local/Client` and `Builds/Local/Server`, including executables, debug symbols, player data, and copied Addressables content. `Builds/Local/Logs` is preserved. Stop a running local match before cleaning because Windows may lock its executables.
+
 This creates:
 
 ```text

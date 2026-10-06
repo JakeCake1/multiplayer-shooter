@@ -7,27 +7,16 @@ namespace Shooter.Bootstrap.Editor
 {
     public static class LocalBuildMenu
     {
-        private const string ClientScenePath = "Assets/Scenes/LocalClient.unity";
-        private const string ServerScenePath = "Assets/Scenes/LocalServer.unity";
-        private const string ClientBuildPath = "Builds/Local/Client/ShooterClient.exe";
-        private const string ServerBuildPath = "Builds/Local/Server/ShooterServer.exe";
-
         [MenuItem("Shooter/Local Development/Build Development Client")]
         public static void BuildClient()
         {
-            Build(
-                ClientScenePath,
-                ClientBuildPath,
-                StandaloneBuildSubtarget.Player);
+            Build(LocalBuildLayout.ClientScenePath, LocalBuildLayout.ClientBuildPath, StandaloneBuildSubtarget.Player);
         }
 
         [MenuItem("Shooter/Local Development/Build Development Dedicated Server")]
         public static void BuildServer()
         {
-            Build(
-                ServerScenePath,
-                ServerBuildPath,
-                StandaloneBuildSubtarget.Server);
+            Build(LocalBuildLayout.ServerScenePath, LocalBuildLayout.ServerBuildPath, StandaloneBuildSubtarget.Server);
         }
 
         [MenuItem("Shooter/Local Development/Build Development Client and Dedicated Server")]
@@ -37,10 +26,25 @@ namespace Shooter.Bootstrap.Editor
             BuildServer();
         }
 
-        private static void Build(
-            string scenePath,
-            string outputPath,
-            StandaloneBuildSubtarget subtarget)
+        [MenuItem("Shooter/Local Development/Build Development Client and Dedicated Server (Clean)")]
+        public static void BuildAllClean()
+        {
+            LocalBuildCleaner.Clean();
+            BuildAll();
+        }
+
+        [MenuItem("Shooter/Local Development/Clean Builds")]
+        public static void CleanBuilds()
+        {
+            if (!EditorUtility.DisplayDialog("Clean local builds", "Delete local client and dedicated-server build outputs? Local logs will be preserved.", "Clean", "Cancel"))
+            {
+                return;
+            }
+
+            LocalBuildCleaner.Clean();
+        }
+
+        private static void Build(string scenePath, string outputPath, StandaloneBuildSubtarget subtarget)
         {
             LocalBootstrapSceneGenerator.CreateBootstrapScenesIfMissing();
 
@@ -51,19 +55,12 @@ namespace Shooter.Bootstrap.Editor
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
 
-            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
-            {
-                scenes = new[] { scenePath },
-                locationPathName = outputPath,
-                target = BuildTarget.StandaloneWindows64,
-                subtarget = (int)subtarget,
-                options = BuildOptions.Development | BuildOptions.AllowDebugging
-            });
+            var buildOptions = new BuildPlayerOptions { scenes = new[] { scenePath }, locationPathName = outputPath, target = BuildTarget.StandaloneWindows64, subtarget = (int)subtarget, options = BuildOptions.Development | BuildOptions.AllowDebugging };
+            var report = BuildPipeline.BuildPlayer(buildOptions);
 
             if (report.summary.result != BuildResult.Succeeded)
             {
-                throw new BuildFailedException(
-                    $"{subtarget} build failed with result {report.summary.result}.");
+                throw new BuildFailedException($"{subtarget} build failed with result {report.summary.result}.");
             }
         }
     }
