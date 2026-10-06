@@ -354,7 +354,7 @@ The local client now starts in an application-owned `Menu` state instead of star
 
 The production UI replacement uses MVVM inside `Shooter.Presentation`. `ClientFlowUiPresenter` observes application snapshots, `ClientFlowScreenFactory` owns the extensible state-to-screen/ViewModel mapping, and the stable `UiController` owns Addressables instantiation, rebinding, stale-load rejection, and release. Views know only their typed ViewModel and named UI Toolkit elements; ViewModels do not reference Unity, Fusion, PlayFab, or Addressables.
 
-The current programmatic `ClientFlowView` remains the active fallback until the following GameObject prefabs are prepared and registered as Addressables. Each prefab must contain a `UIDocument` and its corresponding View component on the same GameObject:
+The client flow UI is now composed through `ClientFlowUiPresenter` and loads the following Addressable GameObject prefabs. Each prefab contains a `UIDocument` and its corresponding View component on the same GameObject:
 
 | Address | View component | Required named elements |
 |---|---|---|
@@ -363,7 +363,7 @@ The current programmatic `ClientFlowView` remains the active fallback until the 
 | `ui/screens/waiting-for-players` | `WaitingForPlayersView` | `players-label`, `countdown-label` |
 | `ui/screens/results` | `ResultsView` | `outcome-label`, `first-player-score-label`, `second-player-score-label`, `find-game-again-button`, `exit-button` |
 
-After all four assets exist, Bootstrap can replace `ClientFlowPresentation` with the new presenter composition in one small change. Keeping this activation separate prevents a missing Addressable or incomplete UXML document from removing the currently working local menu.
+Bootstrap keeps only a thin VContainer lifecycle adapter named `ClientFlowPresentation`; it starts and disposes the presentation-layer presenter. The previous programmatic `ClientFlowView` fallback has been removed so there is one active owner of client flow UI.
 
 ## Decisions Deferred Until Their Vertical Slice
 

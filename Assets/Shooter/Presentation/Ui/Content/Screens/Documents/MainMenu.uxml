@@ -1,6 +1,7 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Shooter/Presentation/Ui/Content/Common/CommonStyle.uss?fileID=7433441132597879392&amp;guid=c1bc1295bf6328e4ca652533fbcf291e&amp;type=3#CommonStyle"/>
-    <ui:Label text="Multiplayer Shooter" name="problem-label" enable-rich-text="true" style="align-content: center; align-items: center; justify-content: center; align-self: center; margin-top: 92px; margin-bottom: 79px;"/>
+    <ui:Label text="Multiplayer Shooter" name="title-label" enable-rich-text="true" style="align-content: center; align-items: center; justify-content: center; align-self: center; margin-top: 92px; margin-bottom: 32px;"/>
+    <ui:Label text="" name="problem-label" enable-rich-text="true" style="align-content: center; align-items: center; justify-content: center; align-self: center; margin-bottom: 32px;"/>
     <ui:Button text="Find Game" name="find-game-button" style="background-color: rgb(99, 192, 249); align-content: center; align-self: center; justify-content: center; align-items: center; width: 200px;"/>
     <ui:Button text="Exit" name="exit-button" style="align-content: center; align-self: center; justify-content: space-evenly; align-items: center; width: 200px;"/>
 </ui:UXML>

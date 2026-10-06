@@ -1,37 +1,26 @@
 using System;
-using Shooter.Application;
-using Shooter.Presentation;
-using UnityEngine;
+using Shooter.Presentation.ClientFlow;
 using VContainer.Unity;
-using Object = UnityEngine.Object;
 
 namespace Shooter.Bootstrap.Client
 {
     public sealed class ClientFlowPresentation : IStartable, IDisposable
     {
-        private readonly IClientFlowController _controller;
-        private ClientFlowView _view;
+        private readonly ClientFlowUiPresenter _presenter;
 
-        public ClientFlowPresentation(IClientFlowController controller)
+        public ClientFlowPresentation(ClientFlowUiPresenter presenter)
         {
-            _controller = controller ?? throw new ArgumentNullException(nameof(controller));
+            _presenter = presenter ?? throw new ArgumentNullException(nameof(presenter));
         }
 
         public void Start()
         {
-            var viewObject = new GameObject("Client Flow UI");
-            Object.DontDestroyOnLoad(viewObject);
-            _view = viewObject.AddComponent<ClientFlowView>();
-            _view.Initialize(_controller);
+            _presenter.Start();
         }
 
         public void Dispose()
         {
-            if (_view != null)
-            {
-                Object.Destroy(_view.gameObject);
-                _view = null;
-            }
+            _presenter.Dispose();
         }
     }
 }

@@ -1,5 +1,7 @@
 using Shooter.Application;
 using Shooter.Infrastructure.Fusion;
+using Shooter.Presentation.ClientFlow;
+using Shooter.Presentation.Ui;
 using VContainer;
 using VContainer.Unity;
 
@@ -13,6 +15,9 @@ namespace Shooter.Bootstrap.Client
             builder.Register<FusionClientNetworkSession>(Lifetime.Singleton).As<INetworkSession>();
             builder.Register<UnityApplicationQuitter>(Lifetime.Singleton).As<IApplicationQuitter>();
             builder.Register<ClientFlowCoordinator>(Lifetime.Singleton).As<IClientFlowController>();
+            builder.Register<UiController>(Lifetime.Singleton);
+            builder.Register<ClientFlowScreenFactory>(Lifetime.Singleton);
+            builder.Register<ClientFlowUiPresenter>(Lifetime.Singleton);
             builder.RegisterInstance(request);
             builder.RegisterEntryPoint<ClientLocalProcessDiagnostics>();
             builder.RegisterEntryPoint<ClientFlowPresentation>();
