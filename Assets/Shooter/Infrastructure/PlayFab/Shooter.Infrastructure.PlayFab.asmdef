@@ -1,16 +1,17 @@
 {
-  "name": "Shooter.Infrastructure.PlayFab",
-  "rootNamespace": "Shooter.Infrastructure.PlayFab",
-  "references": [
-    "Shooter.Application"
-  ],
-  "includePlatforms": [],
-  "excludePlatforms": [],
-  "allowUnsafeCode": false,
-  "overrideReferences": false,
-  "precompiledReferences": [],
-  "autoReferenced": true,
-  "defineConstraints": [],
-  "versionDefines": [],
-  "noEngineReferences": false
+    "name": "Shooter.Infrastructure.PlayFab",
+    "rootNamespace": "Shooter.Infrastructure.PlayFab",
+    "references": [
+        "Shooter.Application",
+        "PlayFabAssembly"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

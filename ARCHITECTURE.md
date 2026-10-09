@@ -65,7 +65,7 @@ Infrastructure.PlayFab ---> Application / Core as required
 Bootstrap ---> all concrete modules required to compose a client or server
 ```
 
-The application-facing backend seam consists of `IAuthenticationService` and `IMatchmakingService`. Local development supplies both from `LocalClientBackendComposition`, while the production client will replace those registrations with `Shooter.Infrastructure.PlayFab` adapters. Matchmaking produces a project-owned `NetworkSessionStartRequest`; neither Presentation nor Fusion receives PlayFab SDK models.
+The application-facing backend seam consists of `IAuthenticationService` and `IMatchmakingService`. `ClientBackendComposition` supplies Unified SDK authentication from `Shooter.Infrastructure.PlayFab` and keeps local matchmaking as an incremental development adapter. Matchmaking produces a project-owned `NetworkSessionStartRequest`; neither Presentation nor Fusion receives PlayFab SDK models.
 
 The exact references should remain as narrow as practical. Do not add a reference merely for convenience.
 

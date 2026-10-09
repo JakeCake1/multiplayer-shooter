@@ -55,22 +55,24 @@ In Rider, use `Run > Attach to Unity Process` and select the exact PID printed b
 From PowerShell at the repository root:
 
 ```powershell
-.\RunLocalMatch.ps1
+.\RunLocalMatch.ps1 -PlayFabTitleId ABCDE
 ```
+
+`PlayFabTitleId` is the public Title ID shown for the selected title in PlayFab Game Manager. It is required by the Unified SDK and is not a developer secret.
 
 Optional arguments:
 
 ```powershell
-.\RunLocalMatch.ps1 -SessionName test-2 -Port 28000
+.\RunLocalMatch.ps1 -PlayFabTitleId ABCDE -SessionName test-2 -Port 28000
 ```
 
 The script launches the server first and waits until its log reports `Network: Connected` before launching either client. The readiness timeout defaults to 90 seconds and can be increased for a particularly slow Development build:
 
 ```powershell
-.\RunLocalMatch.ps1 -SessionName test-2 -Port 28000 -ServerReadyTimeoutSeconds 120
+.\RunLocalMatch.ps1 -PlayFabTitleId ABCDE -SessionName test-2 -Port 28000 -ServerReadyTimeoutSeconds 120
 ```
 
-Each client opens on the local main menu. Select `Find Game` in both client windows to connect them to the session started by the script. The screen then follows the authoritative lifecycle through connecting, waiting/countdown, play, and results; `Find Game Again` disconnects the completed Fusion session before reconnecting.
+Each client authenticates through the PlayFab Unified SDK before opening the local main menu. The launcher supplies distinct development-only Custom IDs, `client-a` and `client-b`, so PlayFab creates or resolves two different players. Select `Find Game` in both client windows to connect them to the session started by the script. Matchmaking is still the local adapter in this slice; the screen then follows the authoritative lifecycle through connecting, waiting/countdown, play, and results, while `Find Game Again` disconnects the completed Fusion session before reconnecting.
 
 Use `W`, `A`, `S`, and `D` to move in the focused client window. Point at the other player and hold the left mouse button to send automatic-fire and aim intent; the dedicated server confirms shots only during the `Playing` phase, resolves the raycast, applies damage, and writes the result with a `[Weapon][Server]` prefix.
 

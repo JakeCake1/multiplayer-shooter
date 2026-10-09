@@ -1,5 +1,6 @@
 using Shooter.Application;
 using Shooter.Infrastructure.Fusion;
+using Shooter.Infrastructure.PlayFab;
 using Shooter.Presentation.ClientFlow;
 using Shooter.Presentation.Ui;
 using VContainer;
@@ -9,7 +10,7 @@ namespace Shooter.Bootstrap.Client
 {
     public static class ClientServiceComposition
     {
-        public static void Register(IContainerBuilder builder, NetworkSessionStartRequest request, string shutdownSignalPath)
+        public static void Register(IContainerBuilder builder, NetworkSessionStartRequest request, PlayFabClientOptions playFabOptions, string shutdownSignalPath)
         {
             builder.Register<FusionNetworkAssetLoader>(Lifetime.Singleton);
             builder.Register<FusionClientNetworkSession>(Lifetime.Singleton).As<INetworkSession>();
@@ -23,7 +24,7 @@ namespace Shooter.Bootstrap.Client
             builder.RegisterEntryPoint<ClientFlowStartup>();
             builder.RegisterEntryPoint<ClientMatchFlowBridge>();
             ClientFlowScreenComposition.Register(builder);
-            LocalClientBackendComposition.Register(builder, request);
+            ClientBackendComposition.Register(builder, request, playFabOptions);
             LocalShutdownServiceComposition.Register(builder, shutdownSignalPath);
         }
     }

@@ -13,6 +13,8 @@ namespace Shooter.Bootstrap
         private const string SessionOption = "--shooter-session";
         private const string PortOption = "--shooter-port";
         private const string ShutdownSignalOption = "--shooter-shutdown-signal";
+        private const string PlayFabTitleIdOption = "--shooter-playfab-title-id";
+        private const string PlayerIdOption = "--shooter-player-id";
 
         public static NetworkSessionStartRequest CreateClientRequest(string[] arguments)
         {
@@ -39,6 +41,18 @@ namespace Shooter.Bootstrap
             return ReadOption(arguments, ShutdownSignalOption);
         }
 
+        public static string GetPlayFabTitleId(string[] arguments)
+        {
+            ValidateArguments(arguments);
+            return ReadRequiredOption(arguments, PlayFabTitleIdOption);
+        }
+
+        public static string GetPlayerId(string[] arguments)
+        {
+            ValidateArguments(arguments);
+            return ReadRequiredOption(arguments, PlayerIdOption);
+        }
+
         private static void ValidateArguments(string[] arguments)
         {
             if (arguments == null)
@@ -61,9 +75,7 @@ namespace Shooter.Bootstrap
                     continue;
                 }
 
-                if (index + 1 >= arguments.Length ||
-                    string.IsNullOrWhiteSpace(arguments[index + 1]) ||
-                    arguments[index + 1].StartsWith("--", StringComparison.Ordinal))
+                if (index + 1 >= arguments.Length || string.IsNullOrWhiteSpace(arguments[index + 1]) || arguments[index + 1].StartsWith("--", StringComparison.Ordinal))
                 {
                     throw new ArgumentException($"Command-line option '{option}' requires a value.");
                 }
@@ -74,13 +86,16 @@ namespace Shooter.Bootstrap
             return null;
         }
 
+        private static string ReadRequiredOption(string[] arguments, string option)
+        {
+            return ReadOption(arguments, option) ?? throw new ArgumentException($"Required command-line option '{option}' is missing.");
+        }
+
         private static ushort ParsePort(string value)
         {
-            if (!ushort.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var port) ||
-                port == 0)
+            if (!ushort.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var port) || port == 0)
             {
-                throw new ArgumentException(
-                    $"Command-line option '{PortOption}' must be an integer from 1 to 65535.");
+                throw new ArgumentException($"Command-line option '{PortOption}' must be an integer from 1 to 65535.");
             }
 
             return port;

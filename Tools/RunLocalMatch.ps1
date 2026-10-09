@@ -1,4 +1,7 @@
 param(
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string]$PlayFabTitleId,
     [string]$SessionName = "local-1v1",
     [ValidateRange(1, 65535)]
     [int]$Port = 27015,
@@ -98,6 +101,8 @@ $clientAProcess = Start-Process `
     -FilePath $clientPath `
     -ArgumentList @(
         "--shooter-session", $SessionName,
+        "--shooter-playfab-title-id", $PlayFabTitleId,
+        "--shooter-player-id", "client-a",
         "--shooter-shutdown-signal", $shutdownSignalPath,
         "-logFile", $clientALog) `
     -PassThru
@@ -106,6 +111,8 @@ $clientBProcess = Start-Process `
     -FilePath $clientPath `
     -ArgumentList @(
         "--shooter-session", $SessionName,
+        "--shooter-playfab-title-id", $PlayFabTitleId,
+        "--shooter-player-id", "client-b",
         "--shooter-shutdown-signal", $shutdownSignalPath,
         "-logFile", $clientBLog) `
     -PassThru
@@ -118,6 +125,7 @@ $processState = @(
         StartTimeUtc = $serverProcess.StartTime.ToUniversalTime().ToString("O")
         Session = $SessionName
         Port = $Port
+        PlayerId = "n/a"
         Log = $serverLog
         ShutdownSignal = $shutdownSignalPath
     }
@@ -128,6 +136,7 @@ $processState = @(
         StartTimeUtc = $clientAProcess.StartTime.ToUniversalTime().ToString("O")
         Session = $SessionName
         Port = "n/a"
+        PlayerId = "client-a"
         Log = $clientALog
         ShutdownSignal = $shutdownSignalPath
     }
@@ -138,6 +147,7 @@ $processState = @(
         StartTimeUtc = $clientBProcess.StartTime.ToUniversalTime().ToString("O")
         Session = $SessionName
         Port = "n/a"
+        PlayerId = "client-b"
         Log = $clientBLog
         ShutdownSignal = $shutdownSignalPath
     }
@@ -145,7 +155,7 @@ $processState = @(
 
 $processState | ConvertTo-Json | Set-Content -LiteralPath $processStatePath -Encoding UTF8
 $processState |
-    Select-Object Role, PID, Session, Port, Log |
+    Select-Object Role, PID, Session, Port, PlayerId, Log |
     Format-Table -AutoSize
 
 Write-Host "Stop all local match processes with: .\StopLocalMatch.ps1"

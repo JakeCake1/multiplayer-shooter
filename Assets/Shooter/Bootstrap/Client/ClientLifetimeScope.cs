@@ -1,4 +1,5 @@
 using System;
+using Shooter.Infrastructure.PlayFab;
 using VContainer;
 using VContainer.Unity;
 
@@ -11,7 +12,8 @@ namespace Shooter.Bootstrap.Client
             var arguments = Environment.GetCommandLineArgs();
             var request = LocalNetworkLaunchArguments.CreateClientRequest(arguments);
             var shutdownSignalPath = LocalNetworkLaunchArguments.GetShutdownSignalPath(arguments);
-            ClientServiceComposition.Register(builder, request, shutdownSignalPath);
+            var playFabOptions = new PlayFabClientOptions(LocalNetworkLaunchArguments.GetPlayFabTitleId(arguments), LocalNetworkLaunchArguments.GetPlayerId(arguments));
+            ClientServiceComposition.Register(builder, request, playFabOptions, shutdownSignalPath);
         }
     }
 }

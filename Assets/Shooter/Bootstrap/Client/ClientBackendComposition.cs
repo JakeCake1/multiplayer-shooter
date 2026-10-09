@@ -1,12 +1,13 @@
 using System;
 using Shooter.Application;
+using Shooter.Infrastructure.PlayFab;
 using VContainer;
 
 namespace Shooter.Bootstrap.Client
 {
-    public static class LocalClientBackendComposition
+    public static class ClientBackendComposition
     {
-        public static void Register(IContainerBuilder builder, NetworkSessionStartRequest request)
+        public static void Register(IContainerBuilder builder, NetworkSessionStartRequest request, PlayFabClientOptions playFabOptions)
         {
             if (builder == null)
             {
@@ -14,7 +15,8 @@ namespace Shooter.Bootstrap.Client
             }
 
             builder.RegisterInstance(request ?? throw new ArgumentNullException(nameof(request)));
-            builder.Register<LocalClientAuthenticationService>(Lifetime.Singleton).As<IAuthenticationService>();
+            builder.RegisterInstance(playFabOptions ?? throw new ArgumentNullException(nameof(playFabOptions)));
+            builder.Register<PlayFabAuthenticationService>(Lifetime.Singleton).As<IAuthenticationService>();
             builder.Register<LocalClientMatchmakingService>(Lifetime.Singleton).As<IMatchmakingService>();
         }
     }
