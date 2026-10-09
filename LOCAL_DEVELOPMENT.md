@@ -80,7 +80,19 @@ The local launcher intentionally does not pass `--shooter-playfab-matchmaking-qu
 .\Builds\Local\Client\ShooterClient.exe --shooter-playfab-title-id ABCDE --shooter-player-id client-a --shooter-playfab-matchmaking-queue quick-1v1
 ```
 
-That queue must have a minimum and maximum match size of two and PlayFab Multiplayer Server allocation enabled. Add a Region Selection Rule whose path is `Latencies`; before creating a ticket, the client requests the title's deployed QoS regions, measures their UDP round-trip time on port 3075, and sends the results in the ticket's `Latencies` attribute. Measurements are written with a `[PlayFab][QoS]` prefix. The client processes ticket state changes every 100 milliseconds only while the ticket is active and uses the resulting `MatchId` as the Fusion session name. The allocated server must therefore start its Fusion session with the PlayFab GSDK `SessionId`, which is equal to that `MatchId`; wiring this server-side GSDK adapter is the next integration slice. Ticket status, allocation endpoint, region, and selected Fusion session are written with a `[PlayFab]` prefix. The existing Searching and failure screens provide client-visible confirmation, so this backend slice does not add a separate debug overlay.
+That queue must have a minimum and maximum match size of two and PlayFab Multiplayer Server allocation enabled. Add a Region Selection Rule whose path is `Latencies`; before creating a ticket, the client requests the title's deployed QoS regions, measures their UDP round-trip time on port 3075, and sends the results in the ticket's `Latencies` attribute. Measurements are written with a `[PlayFab][QoS]` prefix. The client processes ticket state changes every 100 milliseconds only while the ticket is active and uses the resulting `MatchId` as the Fusion session name. Ticket status, allocation endpoint, region, and selected Fusion session are written with a `[PlayFab]` prefix. The existing Searching and failure screens provide client-visible confirmation, so this backend slice does not add a separate debug overlay.
+
+## PlayFab Multiplayer Server build
+
+The official Unity GSDK source is vendored under `Assets/ThirdParty/PlayFabGSDK`. A dedicated server automatically selects PlayFab mode when the Multiplayer Server Agent provides `GSDK_CONFIG_FILE`; without that environment variable it keeps the existing local command-line flow.
+
+Configure the PlayFab Multiplayer Server build with one UDP port named `game_port`. The process startup command should run the dedicated-server executable without local session arguments:
+
+```text
+ShooterServer.exe -batchmode -nographics -logFile -
+```
+
+The server starts the GSDK heartbeat, enters `StandingBy`, and waits for PlayFab allocation. When the Agent activates it, the server reads the GSDK `SessionId` and assigned `serverListeningPort`, then starts the Fusion Server session using those values. A GSDK termination callback gracefully stops Fusion before quitting the process. The build pipeline temporarily allows the GSDK's local HTTP Agent transport only while producing a dedicated-server build and restores the project setting afterward; client builds retain the project's normal HTTP policy.
 
 Use `W`, `A`, `S`, and `D` to move in the focused client window. Point at the other player and hold the left mouse button to send automatic-fire and aim intent; the dedicated server confirms shots only during the `Playing` phase, resolves the raycast, applies damage, and writes the result with a `[Weapon][Server]` prefix.
 

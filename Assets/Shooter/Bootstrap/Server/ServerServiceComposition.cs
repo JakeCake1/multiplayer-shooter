@@ -1,6 +1,8 @@
+using System;
 using Shooter.Application;
 using Shooter.Features.MatchRules;
 using Shooter.Infrastructure.Fusion;
+using Shooter.Infrastructure.PlayFab;
 using VContainer;
 using VContainer.Unity;
 
@@ -8,15 +10,37 @@ namespace Shooter.Bootstrap.Server
 {
     public static class ServerServiceComposition
     {
-        public static void Register(IContainerBuilder builder, MatchRules matchRules, NetworkSessionStartRequest request, string shutdownSignalPath)
+        public static void RegisterLocal(IContainerBuilder builder, MatchRules matchRules, NetworkSessionStartRequest request, string shutdownSignalPath)
+        {
+            RegisterShared(builder, matchRules);
+            builder.RegisterInstance(request);
+            builder.Register<LocalServerAllocationService>(Lifetime.Singleton).As<IServerAllocationService>();
+            builder.RegisterEntryPoint<ServerLocalProcessDiagnostics>();
+            LocalShutdownServiceComposition.Register(builder, shutdownSignalPath);
+            RegisterSessionHost(builder);
+        }
+
+        public static void RegisterPlayFab(IContainerBuilder builder, MatchRules matchRules)
+        {
+            RegisterShared(builder, matchRules);
+#if ENABLE_PLAYFABSERVER_API
+            builder.Register<PlayFabServerAllocationService>(Lifetime.Singleton).As<IServerAllocationService>();
+            RegisterSessionHost(builder);
+#else
+            throw new InvalidOperationException("PlayFab server mode requires ENABLE_PLAYFABSERVER_API.");
+#endif
+        }
+
+        private static void RegisterShared(IContainerBuilder builder, MatchRules matchRules)
         {
             builder.RegisterInstance(matchRules);
             builder.Register<FusionNetworkAssetLoader>(Lifetime.Singleton);
             builder.Register<FusionServerNetworkSession>(Lifetime.Singleton).As<INetworkSession>();
-            builder.RegisterInstance(request);
-            builder.RegisterEntryPoint<ServerLocalProcessDiagnostics>();
-            builder.RegisterEntryPoint<LocalNetworkSessionStarter>();
-            LocalShutdownServiceComposition.Register(builder, shutdownSignalPath);
+        }
+
+        private static void RegisterSessionHost(IContainerBuilder builder)
+        {
+            builder.RegisterEntryPoint<ServerNetworkSessionHost>();
         }
     }
 }

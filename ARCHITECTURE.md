@@ -180,7 +180,9 @@ Concrete PlayFab integration:
 - client QoS measurement and matchmaking latency attributes;
 - matchmaking ticket lifecycle;
 - match result/allocation data translation;
-- Multiplayer Servers integration needed by client/server lifecycle.
+- Multiplayer Servers GSDK lifecycle and allocation translation.
+
+`IServerAllocationService` is the application-facing server seam. Local composition returns the command-line session request immediately; PlayFab composition waits for the GSDK `Active` callback and translates `SessionId` plus the assigned internal port into the same project-owned request. `ServerNetworkSessionHost` owns the stable start/stop orchestration, so Fusion does not depend on GSDK types and local shutdown remains available without PlayFab.
 
 Expose project/application models across the boundary rather than PlayFab SDK models where useful.
 
