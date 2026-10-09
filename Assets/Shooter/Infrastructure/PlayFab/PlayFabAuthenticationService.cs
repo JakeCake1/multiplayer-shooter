@@ -6,7 +6,7 @@ using Shooter.Application;
 
 namespace Shooter.Infrastructure.PlayFab
 {
-    public sealed class PlayFabAuthenticationService : IAuthenticationService, IDisposable
+    public sealed class PlayFabAuthenticationService : IAuthenticationService, IPlayFabPlayerSession, IDisposable
     {
         private readonly PlayFabClientOptions _options;
         private PFServiceConfig _serviceConfig;
@@ -19,6 +19,8 @@ namespace Shooter.Infrastructure.PlayFab
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
+
+        public PFPlayerEntity PlayerEntity => _playerEntity;
 
         public async Task<AuthenticationResult> AuthenticateAsync(CancellationToken cancellationToken)
         {

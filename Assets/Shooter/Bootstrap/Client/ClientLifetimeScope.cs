@@ -13,7 +13,9 @@ namespace Shooter.Bootstrap.Client
             var request = LocalNetworkLaunchArguments.CreateClientRequest(arguments);
             var shutdownSignalPath = LocalNetworkLaunchArguments.GetShutdownSignalPath(arguments);
             var playFabOptions = new PlayFabClientOptions(LocalNetworkLaunchArguments.GetPlayFabTitleId(arguments), LocalNetworkLaunchArguments.GetPlayerId(arguments));
-            ClientServiceComposition.Register(builder, request, playFabOptions, shutdownSignalPath);
+            var matchmakingQueue = LocalNetworkLaunchArguments.GetPlayFabMatchmakingQueue(arguments);
+            var matchmakingOptions = string.IsNullOrWhiteSpace(matchmakingQueue) ? null : new PlayFabMatchmakingOptions(matchmakingQueue, playerCount: LocalNetworkLaunchArguments.PlayerCount);
+            ClientServiceComposition.Register(builder, request, playFabOptions, matchmakingOptions, shutdownSignalPath);
         }
     }
 }

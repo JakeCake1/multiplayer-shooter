@@ -10,7 +10,7 @@ namespace Shooter.Bootstrap.Client
 {
     public static class ClientServiceComposition
     {
-        public static void Register(IContainerBuilder builder, NetworkSessionStartRequest request, PlayFabClientOptions playFabOptions, string shutdownSignalPath)
+        public static void Register(IContainerBuilder builder, NetworkSessionStartRequest request, PlayFabClientOptions playFabOptions, PlayFabMatchmakingOptions matchmakingOptions, string shutdownSignalPath)
         {
             builder.Register<FusionNetworkAssetLoader>(Lifetime.Singleton);
             builder.Register<FusionClientNetworkSession>(Lifetime.Singleton).As<INetworkSession>();
@@ -24,7 +24,7 @@ namespace Shooter.Bootstrap.Client
             builder.RegisterEntryPoint<ClientFlowStartup>();
             builder.RegisterEntryPoint<ClientMatchFlowBridge>();
             ClientFlowScreenComposition.Register(builder);
-            ClientBackendComposition.Register(builder, request, playFabOptions);
+            ClientBackendComposition.Register(builder, request, playFabOptions, matchmakingOptions);
             LocalShutdownServiceComposition.Register(builder, shutdownSignalPath);
         }
     }

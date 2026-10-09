@@ -74,6 +74,14 @@ The script launches the server first and waits until its log reports `Network: C
 
 Each client authenticates through the PlayFab Unified SDK before opening the local main menu. The launcher supplies distinct development-only Custom IDs, `client-a` and `client-b`, so PlayFab creates or resolves two different players. Select `Find Game` in both client windows to connect them to the session started by the script. Matchmaking is still the local adapter in this slice; the screen then follows the authoritative lifecycle through connecting, waiting/countdown, play, and results, while `Find Game Again` disconnects the completed Fusion session before reconnecting.
 
+The local launcher intentionally does not pass `--shooter-playfab-matchmaking-queue`, so it keeps using the local matchmaking adapter. To exercise the PlayFab ticket lifecycle, launch a Development client with an existing queue name:
+
+```powershell
+.\Builds\Local\Client\ShooterClient.exe --shooter-playfab-title-id ABCDE --shooter-player-id client-a --shooter-playfab-matchmaking-queue quick-1v1
+```
+
+That queue must have a minimum and maximum match size of two and PlayFab Multiplayer Server allocation enabled. The client creates a Unified SDK ticket, processes its state changes every 100 milliseconds only while the ticket is active, and uses the resulting `MatchId` as the Fusion session name. The allocated server must therefore start its Fusion session with the PlayFab GSDK `SessionId`, which is equal to that `MatchId`; wiring this server-side GSDK adapter is the next integration slice. Ticket status, allocation endpoint, region, and selected Fusion session are written with a `[PlayFab]` prefix. The existing Searching and failure screens provide client-visible confirmation, so this backend slice does not add a separate debug overlay.
+
 Use `W`, `A`, `S`, and `D` to move in the focused client window. Point at the other player and hold the left mouse button to send automatic-fire and aim intent; the dedicated server confirms shots only during the `Playing` phase, resolves the raycast, applies damage, and writes the result with a `[Weapon][Server]` prefix.
 
 After launch, PowerShell prints a process table with role, PID, session, server port, and log path. Logs are separated into:

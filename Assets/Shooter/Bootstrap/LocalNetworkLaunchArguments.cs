@@ -15,6 +15,7 @@ namespace Shooter.Bootstrap
         private const string ShutdownSignalOption = "--shooter-shutdown-signal";
         private const string PlayFabTitleIdOption = "--shooter-playfab-title-id";
         private const string PlayerIdOption = "--shooter-player-id";
+        private const string PlayFabMatchmakingQueueOption = "--shooter-playfab-matchmaking-queue";
 
         public static NetworkSessionStartRequest CreateClientRequest(string[] arguments)
         {
@@ -51,6 +52,12 @@ namespace Shooter.Bootstrap
         {
             ValidateArguments(arguments);
             return ReadRequiredOption(arguments, PlayerIdOption);
+        }
+
+        public static string GetPlayFabMatchmakingQueue(string[] arguments)
+        {
+            ValidateArguments(arguments);
+            return ReadOption(arguments, PlayFabMatchmakingQueueOption);
         }
 
         private static void ValidateArguments(string[] arguments)

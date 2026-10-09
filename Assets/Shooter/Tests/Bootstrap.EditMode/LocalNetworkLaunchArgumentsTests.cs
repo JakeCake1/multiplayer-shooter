@@ -73,6 +73,22 @@ namespace Shooter.Bootstrap.Tests
         }
 
         [Test]
+        public void GetPlayFabMatchmakingQueue_ReadsOptionalQueue()
+        {
+            var queue = LocalNetworkLaunchArguments.GetPlayFabMatchmakingQueue(new[] { "ShooterClient.exe", "--shooter-playfab-matchmaking-queue", "quick-1v1" });
+
+            Assert.That(queue, Is.EqualTo("quick-1v1"));
+        }
+
+        [Test]
+        public void GetPlayFabMatchmakingQueue_ReturnsNullWhenOptionIsAbsent()
+        {
+            var queue = LocalNetworkLaunchArguments.GetPlayFabMatchmakingQueue(new[] { "ShooterClient.exe" });
+
+            Assert.That(queue, Is.Null);
+        }
+
+        [Test]
         public void GetPlayFabTitleId_RejectsMissingOption()
         {
             var arguments = new[] { "ShooterClient.exe", "--shooter-player-id", "client-a" };
