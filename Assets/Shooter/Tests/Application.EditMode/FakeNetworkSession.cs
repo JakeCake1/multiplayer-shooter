@@ -16,9 +16,12 @@ namespace Shooter.Application.Tests
 
         public int StopCount { get; private set; }
 
+        public NetworkSessionStartRequest LastRequest { get; private set; }
+
         public Task<NetworkSessionStartResult> StartAsync(NetworkSessionStartRequest request)
         {
             StartCount++;
+            LastRequest = request;
             SetState(StartResult.Succeeded ? NetworkSessionState.Connected : NetworkSessionState.Disconnected);
             return Task.FromResult(StartResult);
         }

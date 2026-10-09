@@ -18,10 +18,12 @@ namespace Shooter.Bootstrap.Client
             builder.Register<UiController>(Lifetime.Singleton);
             builder.Register<ClientFlowScreenFactory>(Lifetime.Singleton);
             builder.Register<ClientFlowUiPresenter>(Lifetime.Singleton);
-            builder.RegisterInstance(request);
             builder.RegisterEntryPoint<ClientLocalProcessDiagnostics>();
             builder.RegisterEntryPoint<ClientFlowPresentation>();
+            builder.RegisterEntryPoint<ClientFlowStartup>();
             builder.RegisterEntryPoint<ClientMatchFlowBridge>();
+            ClientFlowScreenComposition.Register(builder);
+            LocalClientBackendComposition.Register(builder, request);
             LocalShutdownServiceComposition.Register(builder, shutdownSignalPath);
         }
     }

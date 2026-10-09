@@ -9,6 +9,8 @@ namespace Shooter.Application
 
         ClientFlowSnapshot Current { get; }
 
+        Task InitializeAsync();
+
         Task FindGameAsync();
 
         void ObserveMatch(ClientMatchSnapshot snapshot);

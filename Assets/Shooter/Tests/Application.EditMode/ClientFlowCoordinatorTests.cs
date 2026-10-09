@@ -5,33 +5,74 @@ namespace Shooter.Application.Tests
 {
     public sealed class ClientFlowCoordinatorTests
     {
-        private static readonly NetworkSessionStartRequest Request = NetworkSessionStartRequest.ForClient("test-session");
-
         [Test]
-        public void StartsInMenu()
+        public void StartsInBooting()
         {
             var coordinator = CreateCoordinator(new FakeNetworkSession());
 
-            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
+            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Booting));
         }
 
         [Test]
-        public async Task SuccessfulFindGameWaitsForAuthoritativeMatchState()
+        public async Task SuccessfulInitializationEntersMenu()
         {
+            var coordinator = CreateCoordinator(new FakeNetworkSession());
+
+            await coordinator.InitializeAsync();
+
+            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
+            Assert.That(coordinator.Current.Problem, Is.Empty);
+        }
+
+        [Test]
+        public async Task AuthenticationFailureEntersMenuWithProblem()
+        {
+            var authentication = new FakeAuthenticationService { Result = AuthenticationResult.Failure("authentication offline") };
+            var coordinator = CreateCoordinator(new FakeNetworkSession(), authentication);
+
+            await coordinator.InitializeAsync();
+
+            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
+            Assert.That(coordinator.Current.Problem, Does.Contain("authentication offline"));
+        }
+
+        [Test]
+        public async Task SuccessfulFindGameUsesMatchmakingRequest()
+        {
+            var request = NetworkSessionStartRequest.ForClient("allocated-session");
+            var matchmaking = new FakeMatchmakingService { Result = MatchmakingResult.Success(request) };
             var session = new FakeNetworkSession();
-            var coordinator = CreateCoordinator(session);
+            var coordinator = CreateCoordinator(session, matchmakingService: matchmaking);
+            await coordinator.InitializeAsync();
 
             await coordinator.FindGameAsync();
 
-            Assert.That(session.StartCount, Is.EqualTo(1));
+            Assert.That(matchmaking.CallCount, Is.EqualTo(1));
+            Assert.That(session.LastRequest, Is.SameAs(request));
             Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.WaitingForPlayers));
         }
 
         [Test]
-        public async Task FailedFindGameReturnsToMenuWithProblem()
+        public async Task MatchmakingFailureReturnsToMenuWithoutStartingNetwork()
+        {
+            var matchmaking = new FakeMatchmakingService { Result = MatchmakingResult.Failure("queue unavailable") };
+            var session = new FakeNetworkSession();
+            var coordinator = CreateCoordinator(session, matchmakingService: matchmaking);
+            await coordinator.InitializeAsync();
+
+            await coordinator.FindGameAsync();
+
+            Assert.That(session.StartCount, Is.Zero);
+            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
+            Assert.That(coordinator.Current.Problem, Does.Contain("queue unavailable"));
+        }
+
+        [Test]
+        public async Task FailedConnectionReturnsToMenuWithProblem()
         {
             var session = new FakeNetworkSession { StartResult = NetworkSessionStartResult.Failure(NetworkSessionError.ConnectionFailed, "offline") };
             var coordinator = CreateCoordinator(session);
+            await coordinator.InitializeAsync();
 
             await coordinator.FindGameAsync();
 
@@ -43,6 +84,7 @@ namespace Shooter.Application.Tests
         public async Task AuthoritativeSnapshotsDrivePlayingAndResults()
         {
             var coordinator = CreateCoordinator(new FakeNetworkSession());
+            await coordinator.InitializeAsync();
             await coordinator.FindGameAsync();
 
             coordinator.ObserveMatch(new ClientMatchSnapshot(ClientMatchStage.Playing, 2, 30f));
@@ -54,10 +96,11 @@ namespace Shooter.Application.Tests
         }
 
         [Test]
-        public async Task FindGameAgainStopsCompletedSessionBeforeStarting()
+        public async Task FindGameAgainStopsCompletedSessionBeforeSearching()
         {
             var session = new FakeNetworkSession();
             var coordinator = CreateCoordinator(session);
+            await coordinator.InitializeAsync();
             await coordinator.FindGameAsync();
             coordinator.ObserveMatch(new ClientMatchSnapshot(ClientMatchStage.Results, 2, 0f));
 
@@ -72,16 +115,16 @@ namespace Shooter.Application.Tests
         public void ExitUsesPlatformCapability()
         {
             var quitter = new FakeApplicationQuitter();
-            var coordinator = new ClientFlowCoordinator(new FakeNetworkSession(), Request, quitter);
+            var coordinator = new ClientFlowCoordinator(new FakeAuthenticationService(), new FakeMatchmakingService(), new FakeNetworkSession(), quitter);
 
             coordinator.Exit();
 
             Assert.That(quitter.WasRequested, Is.True);
         }
 
-        private static ClientFlowCoordinator CreateCoordinator(FakeNetworkSession session)
+        private static ClientFlowCoordinator CreateCoordinator(FakeNetworkSession session, FakeAuthenticationService authenticationService = null, FakeMatchmakingService matchmakingService = null)
         {
-            return new ClientFlowCoordinator(session, Request, new FakeApplicationQuitter());
+            return new ClientFlowCoordinator(authenticationService ?? new FakeAuthenticationService(), matchmakingService ?? new FakeMatchmakingService(), session, new FakeApplicationQuitter());
         }
     }
 }

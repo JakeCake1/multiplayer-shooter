@@ -14,6 +14,11 @@ namespace Shooter.Presentation.Tests
 
         public bool ExitRequested { get; private set; }
 
+        public Task InitializeAsync()
+        {
+            return Task.CompletedTask;
+        }
+
         public Task FindGameAsync()
         {
             FindGameRequestCount++;

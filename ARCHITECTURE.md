@@ -65,6 +65,8 @@ Infrastructure.PlayFab ---> Application / Core as required
 Bootstrap ---> all concrete modules required to compose a client or server
 ```
 
+The application-facing backend seam consists of `IAuthenticationService` and `IMatchmakingService`. Local development supplies both from `LocalClientBackendComposition`, while the production client will replace those registrations with `Shooter.Infrastructure.PlayFab` adapters. Matchmaking produces a project-owned `NetworkSessionStartRequest`; neither Presentation nor Fusion receives PlayFab SDK models.
+
 The exact references should remain as narrow as practical. Do not add a reference merely for convenience.
 
 ### Hard constraints
@@ -142,7 +144,7 @@ Client-facing behavior:
 
 Presentation invokes application capabilities. It does not invoke PlayFab SDK calls directly.
 
-Client flow UI follows MVVM. `ClientFlowUiPresenter` converts observed application flow into a screen request through `ClientFlowScreenFactory`; `UiController` contains only stable Addressable screen lifecycle behavior; each UI Toolkit View binds a typed, Unity-independent ViewModel. Screen selection and ViewModel construction remain outside `UiController`, so adding a screen extends the mapping without changing resource lifecycle code. Runtime UI prefabs are Addressables and own their `UIDocument`, UXML, USS, and View component.
+Client flow UI follows MVVM. `ClientFlowUiPresenter` converts observed application flow into a screen request through `ClientFlowScreenFactory`; the factory delegates each state to an `IClientFlowScreenProvider`, while `ClientFlowScreenComposition` owns the extensible provider list. `UiController` contains only stable Addressable screen lifecycle behavior; each UI Toolkit View binds a typed, Unity-independent ViewModel. Adding a state-specific screen therefore adds a provider and one composition registration without changing the factory or resource lifecycle code. Runtime UI prefabs are Addressables and own their `UIDocument`, UXML, USS, and View component.
 
 ### Infrastructure.Fusion
 Concrete Photon Fusion integration. Direct Fusion usage is expected here.

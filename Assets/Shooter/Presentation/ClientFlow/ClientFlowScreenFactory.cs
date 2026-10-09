@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Shooter.Application;
 using Shooter.Presentation.Ui;
 
@@ -6,11 +7,11 @@ namespace Shooter.Presentation.ClientFlow
 {
     public sealed class ClientFlowScreenFactory
     {
-        private readonly IClientFlowController _flowController;
+        private readonly Dictionary<ClientFlowState, IClientFlowScreenProvider> _providers = new Dictionary<ClientFlowState, IClientFlowScreenProvider>();
 
-        public ClientFlowScreenFactory(IClientFlowController flowController)
+        public ClientFlowScreenFactory(IEnumerable<IClientFlowScreenProvider> providers)
         {
-            _flowController = flowController ?? throw new ArgumentNullException(nameof(flowController));
+            RegisterProviders(providers ?? throw new ArgumentNullException(nameof(providers)));
         }
 
         public UiScreenRequest Create(ClientFlowSnapshot snapshot)
@@ -20,46 +21,33 @@ namespace Shooter.Presentation.ClientFlow
                 throw new ArgumentNullException(nameof(snapshot));
             }
 
-            return snapshot.State switch { ClientFlowState.Menu => CreateMainMenu(snapshot), ClientFlowState.Connecting => CreateConnecting(), ClientFlowState.WaitingForPlayers => CreateWaitingForPlayers(snapshot.Match), ClientFlowState.Results => CreateResults(snapshot.Match), ClientFlowState.Playing => null, _ => throw new ArgumentOutOfRangeException(nameof(snapshot), snapshot.State, "Unsupported client flow state.") };
+            return GetProvider(snapshot.State).Create(snapshot);
         }
 
-        private UiScreenRequest CreateMainMenu(ClientFlowSnapshot snapshot)
+        private void RegisterProviders(IEnumerable<IClientFlowScreenProvider> providers)
         {
-            var viewModel = new MainMenuViewModel(snapshot.Problem, _flowController.FindGameAsync, _flowController.Exit);
-            return new UiScreenRequest(ClientUiScreenAddresses.MainMenu, viewModel);
-        }
-
-        private static UiScreenRequest CreateConnecting()
-        {
-            var viewModel = new ConnectingViewModel("Connecting to the local match server...");
-            return new UiScreenRequest(ClientUiScreenAddresses.Connecting, viewModel);
-        }
-
-        private static UiScreenRequest CreateWaitingForPlayers(ClientMatchSnapshot match)
-        {
-            var players = match == null ? "Connected. Waiting for replicated match state..." : $"Players: {match.ConnectedPlayerCount}/2";
-            var countdown = match == null ? string.Empty : $"Starting in: {match.SecondsRemaining:0.0}s";
-            var viewModel = new WaitingForPlayersViewModel(players, countdown);
-            return new UiScreenRequest(ClientUiScreenAddresses.WaitingForPlayers, viewModel);
-        }
-
-        private UiScreenRequest CreateResults(ClientMatchSnapshot match)
-        {
-            var outcome = BuildOutcome(match);
-            var firstPlayerScore = match == null ? string.Empty : $"Player {match.FirstPlayerId}: {match.FirstPlayerKills}";
-            var secondPlayerScore = match == null ? string.Empty : $"Player {match.SecondPlayerId}: {match.SecondPlayerKills}";
-            var viewModel = new ResultsViewModel(outcome, firstPlayerScore, secondPlayerScore, _flowController.FindGameAsync, _flowController.Exit);
-            return new UiScreenRequest(ClientUiScreenAddresses.Results, viewModel);
-        }
-
-        private static string BuildOutcome(ClientMatchSnapshot match)
-        {
-            if (match == null)
+            foreach (var provider in providers)
             {
-                return "Waiting for authoritative results...";
+                RegisterProvider(provider);
+            }
+        }
+
+        private void RegisterProvider(IClientFlowScreenProvider provider)
+        {
+            if (provider == null)
+            {
+                throw new ArgumentException("The client flow screen provider collection contains null.", nameof(provider));
             }
 
-            return match.IsDraw ? "Draw" : $"Winner: Player {match.WinnerPlayerId}";
+            if (!_providers.TryAdd(provider.State, provider))
+            {
+                throw new InvalidOperationException($"More than one client flow screen provider is registered for {provider.State}.");
+            }
+        }
+
+        private IClientFlowScreenProvider GetProvider(ClientFlowState state)
+        {
+            return _providers.TryGetValue(state, out var provider) ? provider : throw new InvalidOperationException($"No client flow screen provider is registered for {state}.");
         }
     }
 }
