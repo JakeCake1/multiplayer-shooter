@@ -177,6 +177,7 @@ Fusion `NetworkBehaviour` implementations live under `Infrastructure/Fusion/Netw
 ### Infrastructure.PlayFab
 Concrete PlayFab integration:
 - authentication adapter;
+- client QoS measurement and matchmaking latency attributes;
 - matchmaking ticket lifecycle;
 - match result/allocation data translation;
 - Multiplayer Servers integration needed by client/server lifecycle.

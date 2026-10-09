@@ -10,15 +10,17 @@ namespace Shooter.Infrastructure.PlayFab
     public sealed class PlayFabMatchmakingService : IMatchmakingService, IDisposable
     {
         private readonly IPlayFabPlayerSession _playerSession;
+        private readonly IPlayFabMatchmakingAttributesProvider _attributesProvider;
         private readonly PlayFabMatchmakingOptions _options;
         private readonly PlayFabMultiplayerRuntime _runtime;
         private MatchmakingTicket _activeTicket;
         private TaskCompletionSource<MatchmakingResult> _activeCompletion;
         private bool _disposed;
 
-        public PlayFabMatchmakingService(IPlayFabPlayerSession playerSession, PlayFabMatchmakingOptions options, PlayFabMultiplayerRuntime runtime)
+        public PlayFabMatchmakingService(IPlayFabPlayerSession playerSession, IPlayFabMatchmakingAttributesProvider attributesProvider, PlayFabMatchmakingOptions options, PlayFabMultiplayerRuntime runtime)
         {
             _playerSession = playerSession ?? throw new ArgumentNullException(nameof(playerSession));
+            _attributesProvider = attributesProvider ?? throw new ArgumentNullException(nameof(attributesProvider));
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
             RegisterEvents();
@@ -41,7 +43,12 @@ namespace Shooter.Infrastructure.PlayFab
 
             try
             {
-                StartMatchmakingRequest();
+                var attributes = await _attributesProvider.CreateAttributesAsync(cancellationToken);
+                StartMatchmakingRequest(attributes);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception exception)
             {
@@ -69,18 +76,18 @@ namespace Shooter.Infrastructure.PlayFab
             CancelActiveRequest();
         }
 
-        private MatchmakingTicket CreateTicket()
+        private MatchmakingTicket CreateTicket(string attributes)
         {
-            var user = new MatchUser(_playerSession.PlayerEntity, "{}");
+            var user = new MatchUser(_playerSession.PlayerEntity, attributes);
             return PlayFabMultiplayer.CreateMatchmakingTicket(user, _options.QueueName, _options.TimeoutInSeconds);
         }
 
-        private void StartMatchmakingRequest()
+        private void StartMatchmakingRequest(string attributes)
         {
             _runtime.EnsureInitialized();
             _runtime.SetMatchmakingProcessingActive(true);
             _activeCompletion = new TaskCompletionSource<MatchmakingResult>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _activeTicket = CreateTicket();
+            _activeTicket = CreateTicket(attributes);
             if (_activeTicket == null)
             {
                 throw new InvalidOperationException("The SDK returned no matchmaking ticket.");
