@@ -1,0 +1,14 @@
+{
+  "name": "Shooter.Features.Weapon",
+  "rootNamespace": "Shooter.Features.Weapon",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

@@ -1,0 +1,36 @@
+using System;
+using NUnit.Framework;
+using Shooter.Features.Weapon;
+
+namespace Shooter.Tests.Features.Weapon
+{
+    public sealed class AutomaticWeaponRulesTests
+    {
+        [Test]
+        public void ConvertsRoundsPerMinuteToShotInterval()
+        {
+            var rules = new AutomaticWeaponRules(600f);
+
+            Assert.That(rules.RoundsPerMinute, Is.EqualTo(600f));
+            Assert.That(rules.SecondsBetweenShots, Is.EqualTo(0.1f).Within(0.0001f));
+            Assert.That(rules.Range, Is.EqualTo(20f));
+            Assert.That(rules.DamagePerHit, Is.EqualTo(25));
+        }
+
+        [TestCase(0f)]
+        [TestCase(-1f)]
+        [TestCase(float.NaN)]
+        [TestCase(float.PositiveInfinity)]
+        public void RejectsInvalidFireRates(float roundsPerMinute)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => new AutomaticWeaponRules(roundsPerMinute));
+        }
+
+        [Test]
+        public void RejectsInvalidRangeAndDamage()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => new AutomaticWeaponRules(600f, 0f, 25));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new AutomaticWeaponRules(600f, 20f, 0));
+        }
+    }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "Shooter.Features.Health",
+  "rootNamespace": "Shooter.Features.Health",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

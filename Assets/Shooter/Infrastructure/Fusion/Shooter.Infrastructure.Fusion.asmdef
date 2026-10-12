@@ -1,0 +1,26 @@
+{
+  "name": "Shooter.Infrastructure.Fusion",
+  "rootNamespace": "Shooter.Infrastructure.Fusion",
+  "references": [
+    "Shooter.Application",
+    "Shooter.Features.Player",
+    "Shooter.Features.MatchRules",
+    "Shooter.Features.Weapon",
+    "Shooter.Features.Health",
+    "Shooter.Features.Score",
+    "Fusion.Unity",
+    "Photon.Realtime",
+    "Unity.Addressables",
+    "Unity.ResourceManager",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

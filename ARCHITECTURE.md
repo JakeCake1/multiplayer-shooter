@@ -9,7 +9,12 @@ Build a small multiplayer game with explicit boundaries rather than a monolithic
 Assets/
 └── Shooter/
     ├── Core/
-    ├── Gameplay/
+    ├── Features/
+    │   ├── Player/
+    │   ├── MatchRules/
+    │   ├── Weapon/
+    │   ├── Health/
+    │   └── Score/
     ├── Application/
     ├── Presentation/
     ├── Infrastructure/
@@ -26,7 +31,11 @@ Start with these assemblies (names may be refined only with a concrete reason):
 
 ```text
 Shooter.Core
-Shooter.Gameplay
+Shooter.Features.Player
+Shooter.Features.MatchRules
+Shooter.Features.Weapon
+Shooter.Features.Health
+Shooter.Features.Score
 Shooter.Application
 Shooter.Presentation
 Shooter.Infrastructure.Fusion
@@ -45,22 +54,24 @@ Presentation
 Application
      |
      v
- Gameplay
+Feature assemblies
      |
      v
    Core
 
-Infrastructure.Fusion  ---> Application / Gameplay / Core as required
+Infrastructure.Fusion  ---> Application / feature assemblies / Core as required
 Infrastructure.PlayFab ---> Application / Core as required
 
 Bootstrap ---> all concrete modules required to compose a client or server
 ```
 
+The application-facing backend seam consists of `IAuthenticationService` and `IMatchmakingService`. `ClientBackendComposition` supplies Unified SDK authentication from `Shooter.Infrastructure.PlayFab` and keeps local matchmaking as an incremental development adapter. Matchmaking produces a project-owned `NetworkSessionStartRequest`; neither Presentation nor Fusion receives PlayFab SDK models.
+
 The exact references should remain as narrow as practical. Do not add a reference merely for convenience.
 
 ### Hard constraints
-- `Shooter.Core` must not reference Fusion, PlayFab, VContainer, Presentation, or Gameplay.
-- `Shooter.Gameplay` must not reference Fusion, PlayFab, UI, or Bootstrap.
+- `Shooter.Core` must not reference Fusion, PlayFab, VContainer, Presentation, or feature assemblies.
+- Feature assemblies must not reference Fusion, PlayFab, UI, or Bootstrap.
 - `Shooter.Application` must not reference concrete PlayFab/Fusion implementations.
 - Presentation must not call PlayFab APIs directly.
 - Gameplay must not call Photon APIs directly.
@@ -81,8 +92,8 @@ Possible contents only when actually needed:
 
 Avoid "utility dumping ground" behavior.
 
-### Gameplay
-Game rules independent of networking vendor:
+### Features
+Each gameplay feature lives under `Assets/Shooter/Features/<FeatureName>`, owns its own assembly definition, and remains independent of the networking vendor. Current features are `Player`, `MatchRules`, `Weapon`, `Health`, and `Score`. Future gameplay behavior belongs to a new or existing feature rather than a shared catch-all gameplay assembly:
 - health/damage rules;
 - weapon state/rules;
 - player gameplay state;
@@ -133,12 +144,15 @@ Client-facing behavior:
 
 Presentation invokes application capabilities. It does not invoke PlayFab SDK calls directly.
 
+Client flow UI follows MVVM. `ClientFlowUiPresenter` converts observed application flow into a screen request through `ClientFlowScreenFactory`; the factory delegates each state to an `IClientFlowScreenProvider`, while `ClientFlowScreenComposition` owns the extensible provider list. `UiController` contains only stable Addressable screen lifecycle behavior; each UI Toolkit View binds a typed, Unity-independent ViewModel. Adding a state-specific screen therefore adds a provider and one composition registration without changing the factory or resource lifecycle code. Runtime UI prefabs are Addressables and own their `UIDocument`, UXML, USS, and View component.
+
 ### Infrastructure.Fusion
 Concrete Photon Fusion integration. Direct Fusion usage is expected here.
 
 Likely responsibilities:
 - runner lifecycle;
 - client/server network session;
+- Addressables-backed loading of Fusion network prefabs;
 - Fusion input bridge;
 - network player/avatar components;
 - network spawning;
@@ -148,9 +162,22 @@ Likely responsibilities:
 
 Do not create project-owned equivalents for every Fusion primitive such as `INetworkVariable`, `INetworkObject`, `INetworkRPC`, etc. That would be a second networking framework and is explicitly not desired.
 
+The authoritative match adapter is split by responsibility: `FusionServerMatchController` advances pure `MatchStateMachine` rules, `FusionMatchState` contains only replicated state, and `FusionMatchStateObserver` handles client observation. `MatchPhaseRules` defines when gameplay input is accepted, while `FusionPlayerAvatar` applies that rule to the replicated phase on both the authoritative and predicted simulation paths. Network prefabs are resolved through `FusionNetworkAssetLoader`; bootstrap scenes do not serialize prefab references.
+
+The initial combat adapter sends fire and planar aim intent through Fusion input. `FusionServerWeapon` validates aim and fire cadence, performs the authoritative `Physics.Raycast`, applies damage through `FusionPlayerHealthState`, and replicates the most recent confirmed trace endpoints for client debug presentation; clients only observe these server results. This local baseline tests hits against the server's current simulation state and intentionally does not include lag compensation yet.
+
+`FusionServerPlayerRespawn` owns the server-only death countdown and restores full health at the player's original spawn position after three seconds. Replicated health gates movement and firing on both simulation paths, while the respawn timer is replicated only for client presentation. Pending respawns are cancelled when the authoritative match leaves `Playing`.
+
+`FusionPlayerScoreState` stores each player's replicated kill count. `FusionServerWeapon` awards a kill only when its server-confirmed damage changes a living opponent to dead; the pure `PlayerScoreRules` feature owns the score increment rule. Clients only observe the replicated score.
+
+When the authoritative match leaves `Playing`, `FusionServerMatchResultPublisher` snapshots both replicated player scores, resolves the winner through pure `MatchResultRules`, and publishes the immutable result through `FusionMatchResultState` on the match-state network object. Client result presentation reads this snapshot rather than depending on player objects remaining spawned.
+
+Fusion `NetworkBehaviour` implementations live under `Infrastructure/Fusion/NetworkBehaviours/<FeatureName>` while remaining inside `Shooter.Infrastructure.Fusion`. This keeps network-facing components discoverable without creating an assembly per adapter.
+
 ### Infrastructure.PlayFab
 Concrete PlayFab integration:
 - authentication adapter;
+- client QoS measurement and matchmaking latency attributes;
 - matchmaking ticket lifecycle;
 - match result/allocation data translation;
 - Multiplayer Servers integration needed by client/server lifecycle.
@@ -165,9 +192,12 @@ Maintain distinct client and dedicated-server compositions, conceptually:
 ```text
 Bootstrap/
 ├── Client/
-│   └── ClientLifetimeScope
+│   ├── ClientLifetimeScope
+│   ├── ClientLocalProcessDiagnostics
+│   └── LocalProcessDebugOverlay
 └── Server/
-    └── ServerLifetimeScope
+    ├── ServerLifetimeScope
+    └── ServerLocalProcessDiagnostics
 ```
 
 Client composition may include:
@@ -185,6 +215,10 @@ Server composition may include:
 - score/timer.
 
 Dedicated server must not initialize client-only systems such as camera, HUD, audio, VFX, or local input readers.
+
+The client and server bootstrap scenes are the only scenes kept in Build Settings. Runtime scenes and content prefabs use Addressables. Local builds rebuild Addressables content with the player build so client and dedicated-server outputs receive the same network prefab catalog.
+
+Bootstrap lifetime scopes own stable argument/configuration flow and delegate changing VContainer registrations to role-specific `ClientServiceComposition` and `ServerServiceComposition` classes. Client diagnostic lifetime is owned by `ClientLocalProcessDiagnostics`, while the extensible overlay list lives in `ClientDebugOverlayComposition`. Editor bootstrap generation follows the same split: `LocalBootstrapSceneGenerator` owns asset/scene persistence, while network-prefab and client-scene contents live in dedicated composition classes.
 
 ## Runtime Authority Model
 
@@ -206,6 +240,8 @@ Camera, HUD, animation, sound, VFX, crosshair, menus, and non-authoritative feed
 
 ## State Machines
 Do not collapse all runtime flow into one manager.
+
+The detailed ownership, transitions, cancellation, and failure policy are defined in `APPLICATION_FLOW.md`.
 
 ### Client/application state
 Conceptually:

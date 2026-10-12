@@ -1,0 +1,21 @@
+{
+  "name": "Shooter.Features.MatchRules.Tests.EditMode",
+  "rootNamespace": "Shooter.Features.MatchRules.Tests",
+  "references": [
+    "Shooter.Features.MatchRules"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}
