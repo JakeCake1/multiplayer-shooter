@@ -10,7 +10,8 @@ namespace Shooter.Presentation.Tests
         public void MenuMapsToMainMenuViewModelAndCommands()
         {
             var controller = new StubClientFlowController();
-            var factory = CreateFactory(controller);
+            var inputSettings = new StubClientInputSettings();
+            var factory = CreateFactory(controller, inputSettings);
 
             var request = factory.Create(new ClientFlowSnapshot(ClientFlowState.Menu, "offline"));
             var viewModel = request.ViewModel as MainMenuViewModel;
@@ -18,6 +19,9 @@ namespace Shooter.Presentation.Tests
             Assert.That(request.Address, Is.EqualTo(ClientUiScreenAddresses.MainMenu));
             Assert.That(viewModel, Is.Not.Null);
             Assert.That(viewModel.Problem, Is.EqualTo("offline"));
+            Assert.That(viewModel.MouseSensitivity, Is.EqualTo(2.5f));
+            viewModel.SetMouseSensitivity(3f);
+            Assert.That(inputSettings.MouseSensitivityMultiplier, Is.EqualTo(3f));
         }
 
         [Test]
@@ -85,7 +89,12 @@ namespace Shooter.Presentation.Tests
 
         private static ClientFlowScreenFactory CreateFactory(StubClientFlowController controller)
         {
-            var providers = new IClientFlowScreenProvider[] { new BootingClientFlowScreenProvider(), new MenuClientFlowScreenProvider(controller), new SearchingClientFlowScreenProvider(), new ConnectingClientFlowScreenProvider(), new WaitingForPlayersClientFlowScreenProvider(), new PlayingClientFlowScreenProvider(), new ResultsClientFlowScreenProvider(controller) };
+            return CreateFactory(controller, new StubClientInputSettings());
+        }
+
+        private static ClientFlowScreenFactory CreateFactory(StubClientFlowController controller, StubClientInputSettings inputSettings)
+        {
+            var providers = new IClientFlowScreenProvider[] { new BootingClientFlowScreenProvider(), new MenuClientFlowScreenProvider(controller, inputSettings), new SearchingClientFlowScreenProvider(), new ConnectingClientFlowScreenProvider(), new WaitingForPlayersClientFlowScreenProvider(), new PlayingClientFlowScreenProvider(), new ResultsClientFlowScreenProvider(controller) };
             return new ClientFlowScreenFactory(providers);
         }
     }

@@ -6,43 +6,19 @@ namespace Shooter.Infrastructure.Fusion
 {
     internal sealed class FusionClientInputCollector
     {
-        private const float MouseSensitivity = 0.12f;
-        private float _yaw;
-        private float _pitch;
-        private bool _lookInitialized;
+        private readonly FusionFirstPersonLookController _lookController;
 
-        public void Collect(NetworkRunner runner, NetworkInput networkInput)
+        public FusionClientInputCollector(FusionFirstPersonLookController lookController)
         {
-            var input = new FusionPlayerInput { MoveDirection = ReadMovement(), LookRotation = ReadLookRotation(runner) };
+            _lookController = lookController;
+        }
+
+        public void Collect(NetworkRunner _, NetworkInput networkInput)
+        {
+            var input = new FusionPlayerInput { MoveDirection = ReadMovement(), LookRotation = _lookController.NetworkLookRotation };
             input.Buttons.Set(FusionPlayerButton.Fire, IsFireHeld());
             input.Buttons.Set(FusionPlayerButton.Jump, IsJumpHeld());
             networkInput.Set(input);
-        }
-
-        private Vector2 ReadLookRotation(NetworkRunner runner)
-        {
-            InitializeLookIfNeeded(runner);
-            if (Mouse.current == null || Cursor.lockState != CursorLockMode.Locked)
-            {
-                return new Vector2(_yaw, _pitch);
-            }
-
-            var delta = Mouse.current.delta.ReadValue();
-            _yaw = Mathf.Repeat(_yaw + delta.x * MouseSensitivity, 360f);
-            _pitch = Mathf.Clamp(_pitch - delta.y * MouseSensitivity, -85f, 85f);
-            return new Vector2(_yaw, _pitch);
-        }
-
-        private void InitializeLookIfNeeded(NetworkRunner runner)
-        {
-            if (_lookInitialized || !runner.TryGetPlayerObject(runner.LocalPlayer, out var playerObject))
-            {
-                return;
-            }
-
-            _yaw = playerObject.transform.eulerAngles.y;
-            _pitch = 0f;
-            _lookInitialized = true;
         }
 
         private static bool IsFireHeld()

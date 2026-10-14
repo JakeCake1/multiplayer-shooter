@@ -7,10 +7,12 @@ namespace Shooter.Presentation.ClientFlow
     public sealed class MenuClientFlowScreenProvider : IClientFlowScreenProvider
     {
         private readonly IClientFlowController _flowController;
+        private readonly IClientInputSettings _inputSettings;
 
-        public MenuClientFlowScreenProvider(IClientFlowController flowController)
+        public MenuClientFlowScreenProvider(IClientFlowController flowController, IClientInputSettings inputSettings)
         {
             _flowController = flowController ?? throw new ArgumentNullException(nameof(flowController));
+            _inputSettings = inputSettings ?? throw new ArgumentNullException(nameof(inputSettings));
         }
 
         public ClientFlowState State => ClientFlowState.Menu;
@@ -22,7 +24,17 @@ namespace Shooter.Presentation.ClientFlow
                 throw new ArgumentNullException(nameof(snapshot));
             }
 
-            return new UiScreenRequest(ClientUiScreenAddresses.MainMenu, new MainMenuViewModel(snapshot.Problem, _flowController.FindGameAsync, _flowController.Exit));
+            return new UiScreenRequest(ClientUiScreenAddresses.MainMenu, CreateViewModel(snapshot));
+        }
+
+        private MainMenuViewModel CreateViewModel(ClientFlowSnapshot snapshot)
+        {
+            return new MainMenuViewModel(snapshot.Problem, _inputSettings.MouseSensitivityMultiplier, _inputSettings.MinimumMouseSensitivityMultiplier, _inputSettings.MaximumMouseSensitivityMultiplier, SetMouseSensitivity, _flowController.FindGameAsync, _flowController.Exit);
+        }
+
+        private void SetMouseSensitivity(float value)
+        {
+            _inputSettings.MouseSensitivityMultiplier = value;
         }
     }
 }

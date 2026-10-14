@@ -9,15 +9,17 @@ namespace Shooter.Infrastructure.Fusion
     {
         private const float EyeHeight = 0.65f;
         private NetworkRunner _runner;
+        private FusionFirstPersonLookController _lookController;
         private Camera _camera;
         private FusionPlayerAvatar _avatar;
         private FusionMatchState _matchState;
         private Renderer[] _localRenderers;
         private bool _gameplayWasActive;
 
-        public void Configure(NetworkRunner runner)
+        public void Configure(NetworkRunner runner, FusionFirstPersonLookController lookController)
         {
             _runner = runner;
+            _lookController = lookController;
         }
 
         private void LateUpdate()
@@ -101,8 +103,7 @@ namespace Shooter.Infrastructure.Fusion
             }
 
             var eyePosition = _avatar.transform.position + Vector3.up * EyeHeight;
-            var eyeRotation = Quaternion.Euler(_avatar.LookPitch, _avatar.transform.eulerAngles.y, 0f);
-            _camera.transform.SetPositionAndRotation(eyePosition, eyeRotation);
+            _camera.transform.SetPositionAndRotation(eyePosition, _lookController.VisualLookRotation);
         }
 
         private void ResolveCameraIfNeeded()

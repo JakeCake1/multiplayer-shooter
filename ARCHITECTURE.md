@@ -240,7 +240,7 @@ Use prediction only where it improves responsiveness and can be corrected by aut
 ### Client Presentation
 Camera, HUD, animation, sound, VFX, crosshair, menus, and non-authoritative feedback remain client-side.
 
-The active match uses a first-person presentation. `FusionFirstPersonCamera` exists only in the client session, follows the locally owned predicted avatar at eye height, applies replicated/predicted pitch, hides only the local body renderer, and owns cursor capture. The input payload carries movement intent plus sanitized yaw/pitch; the server derives and normalizes the three-dimensional shot ray from those angles before authoritative hit resolution.
+The active match uses a first-person presentation. `FusionFirstPersonCamera` exists only in the client session, follows the locally owned predicted avatar at eye height, applies the smoothed local visual look rotation, hides only the local body renderer, and owns cursor capture. `FusionFirstPersonLookController` samples mouse delta once per Unity frame, applies the persisted client sensitivity multiplier, exposes an unsmoothed target rotation to Fusion input, and smooths only the camera presentation. The input payload carries movement intent plus sanitized yaw/pitch; the server derives and normalizes the three-dimensional shot ray from those angles before authoritative hit resolution.
 
 ## State Machines
 Do not collapse all runtime flow into one manager.
