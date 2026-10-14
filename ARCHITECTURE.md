@@ -182,7 +182,7 @@ Concrete PlayFab integration:
 - match result/allocation data translation;
 - Multiplayer Servers GSDK lifecycle and allocation translation.
 
-`IServerAllocationService` is the application-facing server seam. Local composition returns the command-line session request immediately; PlayFab composition waits for the GSDK `Active` callback and translates `SessionId` plus the assigned internal port into the same project-owned request. `ServerNetworkSessionHost` owns the stable start/stop orchestration, so Fusion does not depend on GSDK types and local shutdown remains available without PlayFab.
+`IServerAllocationService` is the application-facing server seam. Local composition returns the command-line session request immediately; PlayFab composition waits for the GSDK `Active` callback and translates `SessionId` plus the assigned internal port into the same project-owned request. Fusion reports the authoritative `Finished` transition through `IServerMatchLifecycle`; `ServerNetworkSessionHost` owns stable start/stop orchestration and applies the role-specific process policy registered by Bootstrap. PlayFab servers shut down after the results grace period, while local servers remain alive for repeated development matches. Fusion therefore does not depend on GSDK types and local shutdown remains available without PlayFab.
 
 Expose project/application models across the boundary rather than PlayFab SDK models where useful.
 

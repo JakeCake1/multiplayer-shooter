@@ -13,6 +13,7 @@ namespace Shooter.Bootstrap.Server
         public static void RegisterLocal(IContainerBuilder builder, MatchRules matchRules, NetworkSessionStartRequest request, string shutdownSignalPath)
         {
             RegisterShared(builder, matchRules);
+            builder.RegisterInstance(new ServerProcessShutdownPolicy(false, TimeSpan.Zero));
             builder.RegisterInstance(request);
             builder.Register<LocalServerAllocationService>(Lifetime.Singleton).As<IServerAllocationService>();
             builder.RegisterEntryPoint<ServerLocalProcessDiagnostics>();
@@ -23,6 +24,7 @@ namespace Shooter.Bootstrap.Server
         public static void RegisterPlayFab(IContainerBuilder builder, MatchRules matchRules)
         {
             RegisterShared(builder, matchRules);
+            builder.RegisterInstance(new ServerProcessShutdownPolicy(true, TimeSpan.FromSeconds(ServerProcessShutdownPolicy.DefaultMatchFinishedGracePeriodSeconds)));
 #if ENABLE_PLAYFABSERVER_API
             builder.Register<PlayFabServerAllocationService>(Lifetime.Singleton).As<IServerAllocationService>();
             RegisterSessionHost(builder);
@@ -34,6 +36,7 @@ namespace Shooter.Bootstrap.Server
         private static void RegisterShared(IContainerBuilder builder, MatchRules matchRules)
         {
             builder.RegisterInstance(matchRules);
+            builder.Register<ServerMatchLifecycle>(Lifetime.Singleton).As<IServerMatchLifecycle>();
             builder.Register<FusionNetworkAssetLoader>(Lifetime.Singleton);
             builder.Register<FusionServerNetworkSession>(Lifetime.Singleton).As<INetworkSession>();
         }

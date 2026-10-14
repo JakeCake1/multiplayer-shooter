@@ -1,5 +1,6 @@
 using System;
 using global::Fusion;
+using Shooter.Application;
 using Shooter.Features.MatchRules;
 using UnityEngine;
 
@@ -8,14 +9,16 @@ namespace Shooter.Infrastructure.Fusion
     public sealed class FusionServerMatchController : SimulationBehaviour
     {
         private MatchRules _rules;
+        private IServerMatchLifecycle _matchLifecycle;
         private MatchStateMachine _stateMachine;
         private FusionMatchState _replicatedState;
         private FusionMatchResultState _resultState;
         private readonly FusionServerMatchResultPublisher _resultPublisher = new FusionServerMatchResultPublisher();
 
-        public void Configure(MatchRules rules)
+        public void Configure(MatchRules rules, IServerMatchLifecycle matchLifecycle)
         {
             _rules = rules ?? throw new ArgumentNullException(nameof(rules));
+            _matchLifecycle = matchLifecycle ?? throw new ArgumentNullException(nameof(matchLifecycle));
         }
 
         public void Attach(FusionMatchState replicatedState, FusionMatchResultState resultState)
@@ -59,6 +62,15 @@ namespace Shooter.Infrastructure.Fusion
             }
 
             PublishState(connectedPlayerCount);
+            ReportFinishedMatchIfNeeded();
+        }
+
+        private void ReportFinishedMatchIfNeeded()
+        {
+            if (_stateMachine.Phase == MatchPhase.Finished)
+            {
+                _matchLifecycle.ReportMatchFinished();
+            }
         }
 
         private void PublishState(int connectedPlayerCount)
