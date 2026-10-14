@@ -11,27 +11,34 @@ namespace Shooter.Infrastructure.Fusion
     public sealed class FusionPlayerAvatar : NetworkBehaviour
     {
         private const float MovementSpeed = 5f;
+        private const float JumpSpeed = 7f;
+        private const float Gravity = 20f;
         private FusionPlayerHealthState _healthState;
         private FusionMatchState _matchState;
+        private float _groundHeight;
+
+        [Networked]
+        private float VerticalVelocity { get; set; }
+
+        [Networked]
+        private NetworkButtons PreviousButtons { get; set; }
 
         public override void Spawned()
         {
             _healthState = GetComponent<FusionPlayerHealthState>();
+            _groundHeight = transform.position.y;
         }
 
         public override void FixedUpdateNetwork()
         {
-            if (!CanAcceptGameplayInput())
-            {
-                return;
-            }
-
             if (!GetInput(out FusionPlayerInput input))
             {
                 return;
             }
 
-            Move(input);
+            var jumpPressed = input.Buttons.WasPressed(PreviousButtons, FusionPlayerButton.Jump);
+            PreviousButtons = input.Buttons;
+            Move(input, CanAcceptGameplayInput(), jumpPressed);
         }
 
         private bool CanAcceptGameplayInput()
@@ -48,10 +55,30 @@ namespace Shooter.Infrastructure.Fusion
             }
         }
 
-        private void Move(FusionPlayerInput input)
+        private void Move(FusionPlayerInput input, bool acceptsGameplayInput, bool jumpPressed)
         {
-            var displacement = PlayerMovementRules.CalculateDisplacement(new PlanarMovement(input.MoveDirection.x, input.MoveDirection.y), MovementSpeed, Runner.DeltaTime);
-            transform.position += new Vector3(displacement.Horizontal, 0f, displacement.Vertical);
+            var planarDisplacement = CalculatePlanarDisplacement(input, acceptsGameplayInput);
+            var jumpState = CalculateJumpState(acceptsGameplayInput && jumpPressed);
+            ApplyMovement(planarDisplacement, jumpState);
+        }
+
+        private PlanarMovement CalculatePlanarDisplacement(FusionPlayerInput input, bool acceptsGameplayInput)
+        {
+            var direction = acceptsGameplayInput ? new PlanarMovement(input.MoveDirection.x, input.MoveDirection.y) : new PlanarMovement(0f, 0f);
+            return PlayerMovementRules.CalculateDisplacement(direction, MovementSpeed, Runner.DeltaTime);
+        }
+
+        private PlayerJumpState CalculateJumpState(bool jumpPressed)
+        {
+            var height = Mathf.Max(0f, transform.position.y - _groundHeight);
+            return PlayerJumpRules.Simulate(new PlayerJumpState(height, VerticalVelocity), jumpPressed, JumpSpeed, Gravity, Runner.DeltaTime);
+        }
+
+        private void ApplyMovement(PlanarMovement planarDisplacement, PlayerJumpState jumpState)
+        {
+            VerticalVelocity = jumpState.Velocity;
+            var position = transform.position;
+            transform.position = new Vector3(position.x + planarDisplacement.Horizontal, _groundHeight + jumpState.Height, position.z + planarDisplacement.Vertical);
         }
     }
 }

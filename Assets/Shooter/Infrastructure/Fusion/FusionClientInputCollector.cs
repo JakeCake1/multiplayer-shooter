@@ -10,6 +10,7 @@ namespace Shooter.Infrastructure.Fusion
         {
             var input = new FusionPlayerInput { MoveDirection = ReadMovement(), AimDirection = ReadAimDirection(runner) };
             input.Buttons.Set(FusionPlayerButton.Fire, IsFireHeld());
+            input.Buttons.Set(FusionPlayerButton.Jump, IsJumpHeld());
             networkInput.Set(input);
         }
 
@@ -34,6 +35,11 @@ namespace Shooter.Infrastructure.Fusion
         private static bool IsFireHeld()
         {
             return Mouse.current != null && Mouse.current.leftButton.isPressed;
+        }
+
+        private static bool IsJumpHeld()
+        {
+            return Keyboard.current != null && Keyboard.current.spaceKey.isPressed;
         }
 
         private static Vector2 ReadMovement()
