@@ -1,6 +1,7 @@
 using global::Fusion;
 using Shooter.Features.MatchRules;
 using Shooter.Features.Player;
+using Shooter.Features.Weapon;
 using UnityEngine;
 
 namespace Shooter.Infrastructure.Fusion
@@ -38,7 +39,7 @@ namespace Shooter.Infrastructure.Fusion
 
             var jumpPressed = input.Buttons.WasPressed(PreviousButtons, FusionPlayerButton.Jump);
             PreviousButtons = input.Buttons;
-            Move(input, CanAcceptGameplayInput(), jumpPressed);
+            SimulatePlayer(input, CanAcceptGameplayInput(), jumpPressed);
         }
 
         private bool CanAcceptGameplayInput()
@@ -55,11 +56,12 @@ namespace Shooter.Infrastructure.Fusion
             }
         }
 
-        private void Move(FusionPlayerInput input, bool acceptsGameplayInput, bool jumpPressed)
+        private void SimulatePlayer(FusionPlayerInput input, bool acceptsGameplayInput, bool jumpPressed)
         {
             var planarDisplacement = CalculatePlanarDisplacement(input, acceptsGameplayInput);
             var jumpState = CalculateJumpState(acceptsGameplayInput && jumpPressed);
             ApplyMovement(planarDisplacement, jumpState);
+            ApplyFacing(input.AimDirection, acceptsGameplayInput);
         }
 
         private PlanarMovement CalculatePlanarDisplacement(FusionPlayerInput input, bool acceptsGameplayInput)
@@ -79,6 +81,16 @@ namespace Shooter.Infrastructure.Fusion
             VerticalVelocity = jumpState.Velocity;
             var position = transform.position;
             transform.position = new Vector3(position.x + planarDisplacement.Horizontal, _groundHeight + jumpState.Height, position.z + planarDisplacement.Vertical);
+        }
+
+        private void ApplyFacing(Vector2 aimDirection, bool acceptsGameplayInput)
+        {
+            if (!acceptsGameplayInput || !WeaponAimRules.TryNormalize(aimDirection.x, aimDirection.y, out var facing))
+            {
+                return;
+            }
+
+            transform.rotation = Quaternion.LookRotation(new Vector3(facing.Horizontal, 0f, facing.Vertical));
         }
     }
 }
