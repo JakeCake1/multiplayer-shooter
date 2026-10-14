@@ -19,6 +19,7 @@ namespace Shooter.Bootstrap.Client
             builder.Register<UiController>(Lifetime.Singleton);
             builder.Register<ClientFlowScreenFactory>(Lifetime.Singleton);
             builder.Register<ClientFlowUiPresenter>(Lifetime.Singleton);
+            builder.Register<FusionClientMatchSnapshotSource>(Lifetime.Singleton);
             builder.RegisterEntryPoint<ClientLocalProcessDiagnostics>();
             builder.RegisterEntryPoint<ClientFlowPresentation>();
             builder.RegisterEntryPoint<ClientFlowStartup>();

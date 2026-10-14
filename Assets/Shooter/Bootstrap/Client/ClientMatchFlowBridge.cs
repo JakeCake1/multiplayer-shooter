@@ -1,7 +1,5 @@
 using System;
 using Shooter.Application;
-using Shooter.Features.MatchRules;
-using Shooter.Infrastructure.Fusion;
 using UnityEngine;
 using VContainer.Unity;
 
@@ -9,24 +7,31 @@ namespace Shooter.Bootstrap.Client
 {
     public sealed class ClientMatchFlowBridge : ITickable
     {
+        private const float SnapshotPollIntervalSeconds = 0.1f;
         private readonly IClientFlowController _controller;
-        private FusionMatchState _matchState;
+        private readonly FusionClientMatchSnapshotSource _snapshotSource;
         private ClientMatchSnapshot _lastSnapshot;
+        private float _nextSnapshotTime;
 
-        public ClientMatchFlowBridge(IClientFlowController controller)
+        public ClientMatchFlowBridge(IClientFlowController controller, FusionClientMatchSnapshotSource snapshotSource)
         {
             _controller = controller ?? throw new ArgumentNullException(nameof(controller));
+            _snapshotSource = snapshotSource ?? throw new ArgumentNullException(nameof(snapshotSource));
         }
 
         public void Tick()
         {
-            FindMatchStateIfNeeded();
-            if (_matchState == null || _matchState.Object == null)
+            if (Time.unscaledTime < _nextSnapshotTime)
             {
                 return;
             }
 
-            var snapshot = CreateSnapshot();
+            _nextSnapshotTime = Time.unscaledTime + SnapshotPollIntervalSeconds;
+            if (!_snapshotSource.TryCreate(out var snapshot))
+            {
+                return;
+            }
+
             if (HasChanged(snapshot))
             {
                 _lastSnapshot = snapshot;
@@ -34,29 +39,19 @@ namespace Shooter.Bootstrap.Client
             }
         }
 
-        private void FindMatchStateIfNeeded()
-        {
-            if (_matchState == null)
-            {
-                _matchState = UnityEngine.Object.FindFirstObjectByType<FusionMatchState>();
-            }
-        }
-
-        private ClientMatchSnapshot CreateSnapshot()
-        {
-            var result = _matchState.GetComponent<FusionMatchResultState>();
-            if (_matchState.Phase == MatchPhase.Finished && result != null && result.HasResult)
-            {
-                return new ClientMatchSnapshot(ClientMatchStage.Results, _matchState.ConnectedPlayerCount, 0f, result.FirstPlayerId, result.FirstPlayerKills, result.SecondPlayerId, result.SecondPlayerKills, result.WinnerPlayerId, result.IsDraw);
-            }
-
-            var stage = _matchState.Phase == MatchPhase.Playing || _matchState.Phase == MatchPhase.Finishing ? ClientMatchStage.Playing : ClientMatchStage.WaitingForPlayers;
-            return new ClientMatchSnapshot(stage, _matchState.ConnectedPlayerCount, _matchState.SecondsRemaining);
-        }
-
         private bool HasChanged(ClientMatchSnapshot snapshot)
         {
-            return _lastSnapshot == null || _lastSnapshot.Stage != snapshot.Stage || _lastSnapshot.ConnectedPlayerCount != snapshot.ConnectedPlayerCount || Mathf.CeilToInt(_lastSnapshot.SecondsRemaining) != Mathf.CeilToInt(snapshot.SecondsRemaining) || _lastSnapshot.FirstPlayerKills != snapshot.FirstPlayerKills || _lastSnapshot.SecondPlayerKills != snapshot.SecondPlayerKills;
+            return _lastSnapshot == null || _lastSnapshot.Stage != snapshot.Stage || _lastSnapshot.ConnectedPlayerCount != snapshot.ConnectedPlayerCount || Mathf.CeilToInt(_lastSnapshot.SecondsRemaining) != Mathf.CeilToInt(snapshot.SecondsRemaining) || PlayerHasChanged(_lastSnapshot.FirstPlayer, snapshot.FirstPlayer) || PlayerHasChanged(_lastSnapshot.SecondPlayer, snapshot.SecondPlayer);
+        }
+
+        private static bool PlayerHasChanged(ClientPlayerMatchSnapshot previous, ClientPlayerMatchSnapshot current)
+        {
+            if (previous == null || current == null)
+            {
+                return previous != current;
+            }
+
+            return previous.PlayerId != current.PlayerId || previous.Kills != current.Kills || previous.CurrentHealth != current.CurrentHealth || previous.MaxHealth != current.MaxHealth || previous.IsLocal != current.IsLocal;
         }
     }
 }

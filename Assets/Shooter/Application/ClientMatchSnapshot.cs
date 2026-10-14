@@ -2,15 +2,13 @@ namespace Shooter.Application
 {
     public sealed class ClientMatchSnapshot
     {
-        public ClientMatchSnapshot(ClientMatchStage stage, int connectedPlayerCount, float secondsRemaining, int firstPlayerId = 0, int firstPlayerKills = 0, int secondPlayerId = 0, int secondPlayerKills = 0, int winnerPlayerId = 0, bool isDraw = false)
+        public ClientMatchSnapshot(ClientMatchStage stage, int connectedPlayerCount, float secondsRemaining, ClientPlayerMatchSnapshot firstPlayer = null, ClientPlayerMatchSnapshot secondPlayer = null, int winnerPlayerId = 0, bool isDraw = false)
         {
             Stage = stage;
             ConnectedPlayerCount = connectedPlayerCount;
             SecondsRemaining = secondsRemaining;
-            FirstPlayerId = firstPlayerId;
-            FirstPlayerKills = firstPlayerKills;
-            SecondPlayerId = secondPlayerId;
-            SecondPlayerKills = secondPlayerKills;
+            FirstPlayer = firstPlayer;
+            SecondPlayer = secondPlayer;
             WinnerPlayerId = winnerPlayerId;
             IsDraw = isDraw;
         }
@@ -21,13 +19,9 @@ namespace Shooter.Application
 
         public float SecondsRemaining { get; }
 
-        public int FirstPlayerId { get; }
+        public ClientPlayerMatchSnapshot FirstPlayer { get; }
 
-        public int FirstPlayerKills { get; }
-
-        public int SecondPlayerId { get; }
-
-        public int SecondPlayerKills { get; }
+        public ClientPlayerMatchSnapshot SecondPlayer { get; }
 
         public int WinnerPlayerId { get; }
 
