@@ -1,5 +1,6 @@
 using global::Fusion;
 using Shooter.Features.MatchRules;
+using Shooter.Features.Player;
 using Shooter.Features.Weapon;
 using UnityEngine;
 
@@ -73,8 +74,15 @@ namespace Shooter.Infrastructure.Fusion
 
         private static bool TryGetShotDirection(FusionPlayerInput input, out Vector3 shotDirection)
         {
-            var valid = WeaponAimRules.TryNormalize(input.AimDirection.x, input.AimDirection.y, out var aimDirection);
-            shotDirection = valid ? new Vector3(aimDirection.Horizontal, 0f, aimDirection.Vertical) : Vector3.zero;
+            if (!PlayerLookRules.TrySanitize(input.LookRotation.x, input.LookRotation.y, out var lookRotation))
+            {
+                shotDirection = Vector3.zero;
+                return false;
+            }
+
+            var candidate = Quaternion.Euler(lookRotation.Pitch, lookRotation.Yaw, 0f) * Vector3.forward;
+            var valid = WeaponAimRules.TryNormalize(candidate.x, candidate.y, candidate.z, out var aimDirection);
+            shotDirection = valid ? new Vector3(aimDirection.Horizontal, aimDirection.Vertical, aimDirection.Depth) : Vector3.zero;
             return valid;
         }
 

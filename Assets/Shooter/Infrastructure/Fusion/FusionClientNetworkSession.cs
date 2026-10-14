@@ -28,7 +28,10 @@ namespace Shooter.Infrastructure.Fusion
             runner.ProvideInput = true;
             var events = runner.gameObject.AddComponent<NetworkEvents>();
             events.OnInput ??= new NetworkEvents.InputEvent();
-            events.OnInput.AddListener(FusionClientInputCollector.Collect);
+            var inputCollector = new FusionClientInputCollector();
+            events.OnInput.AddListener(inputCollector.Collect);
+            var firstPersonCamera = runner.gameObject.AddComponent<FusionFirstPersonCamera>();
+            firstPersonCamera.Configure(runner);
             return runner;
         }
 
