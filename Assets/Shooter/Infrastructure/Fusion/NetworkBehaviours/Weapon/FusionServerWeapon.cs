@@ -108,7 +108,7 @@ namespace Shooter.Infrastructure.Fusion
 
         private bool ResolveShot(Vector3 shotOrigin, Vector3 shotDirection, out Vector3 shotEnd, out FusionPlayerHealthState target, out int appliedDamage)
         {
-            if (!Physics.Raycast(shotOrigin, shotDirection, out var hit, Rules.Range, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+            if (!TryResolveLagCompensatedHit(shotOrigin, shotDirection, out var hit))
             {
                 shotEnd = shotOrigin + shotDirection * Rules.Range;
                 target = null;
@@ -116,8 +116,8 @@ namespace Shooter.Infrastructure.Fusion
                 return false;
             }
 
-            shotEnd = hit.point;
-            target = hit.collider.GetComponentInParent<FusionPlayerHealthState>();
+            shotEnd = hit.Point;
+            target = hit.GameObject.GetComponentInParent<FusionPlayerHealthState>();
             if (target == null || target.Object == Object || target.IsDead)
             {
                 appliedDamage = 0;
@@ -127,6 +127,12 @@ namespace Shooter.Infrastructure.Fusion
             appliedDamage = target.ApplyDamage(Rules.DamagePerHit);
             AwardKillIfTargetDied(target);
             return appliedDamage > 0;
+        }
+
+        private bool TryResolveLagCompensatedHit(Vector3 shotOrigin, Vector3 shotDirection, out LagCompensatedHit hit)
+        {
+            const HitOptions options = HitOptions.IncludePhysX | HitOptions.SubtickAccuracy | HitOptions.IgnoreInputAuthority;
+            return Runner.LagCompensation.Raycast(shotOrigin, shotDirection, Rules.Range, Object.InputAuthority, out hit, Physics.DefaultRaycastLayers, options, QueryTriggerInteraction.Ignore);
         }
 
         private void AwardKillIfTargetDied(FusionPlayerHealthState target)
@@ -150,11 +156,11 @@ namespace Shooter.Infrastructure.Fusion
         {
             if (didDamage)
             {
-                Debug.Log($"[Weapon][Server] Confirmed shot {ConfirmedShotCount} for player {Object.InputAuthority}; hit {target.Object.InputAuthority}; damage: {appliedDamage}; health: {target.CurrentHealth}/{target.MaxHealth}.");
+                Debug.Log($"[Weapon][Server] Lag-compensated shot {ConfirmedShotCount} for player {Object.InputAuthority}; hit {target.Object.InputAuthority}; damage: {appliedDamage}; health: {target.CurrentHealth}/{target.MaxHealth}.");
                 return;
             }
 
-            Debug.Log($"[Weapon][Server] Confirmed shot {ConfirmedShotCount} for player {Object.InputAuthority}; miss; interval: {Rules.SecondsBetweenShots:0.000}s.");
+            Debug.Log($"[Weapon][Server] Lag-compensated shot {ConfirmedShotCount} for player {Object.InputAuthority}; miss; interval: {Rules.SecondsBetweenShots:0.000}s.");
         }
     }
 }

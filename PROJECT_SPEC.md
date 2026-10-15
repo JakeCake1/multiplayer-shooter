@@ -165,7 +165,7 @@ Not yet designed in detail:
 - Application/Game Flow implementation;
 - concrete interfaces/classes and their APIs;
 - exact Fusion movement/prediction approach;
-- production lag-compensation policy beyond the current authoritative server-raycast baseline;
+- production lag-compensation history tuning and abuse policy beyond the current 200-millisecond Fusion baseline;
 - PlayFab ticket/allocation integration details;
 - scene strategy;
 - server process configuration and hosted deployment;

@@ -20,6 +20,8 @@ namespace Shooter.Bootstrap.Editor
             typeof(global::Fusion.NetworkObject),
             typeof(CharacterController),
             typeof(global::Fusion.NetworkCharacterController),
+            typeof(global::Fusion.HitboxRoot),
+            typeof(global::Fusion.Hitbox),
             typeof(FusionPlayerAvatar),
             typeof(FusionServerWeapon),
             typeof(FusionPlayerHealthState),
@@ -39,6 +41,7 @@ namespace Shooter.Bootstrap.Editor
             {
                 var changed = RemoveLegacyPlayerComponents(prefabRoot);
                 changed |= AddMissingComponents(prefabRoot, PlayerComponentTypes);
+                changed |= EnsurePlayerHitboxConfiguration(prefabRoot);
                 if (changed)
                 {
                     PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
@@ -59,6 +62,7 @@ namespace Shooter.Bootstrap.Editor
         {
             RemoveLegacyPlayerComponents(target);
             AddMissingComponents(target, PlayerComponentTypes);
+            EnsurePlayerHitboxConfiguration(target);
         }
 
         private static void EnsurePrefabComponents(string prefabPath, Type[] componentTypes)
@@ -96,6 +100,21 @@ namespace Shooter.Bootstrap.Editor
         {
             var changed = RemoveComponent<global::Fusion.NetworkTransform>(target);
             changed |= RemoveComponent<CapsuleCollider>(target);
+            return changed;
+        }
+
+        private static bool EnsurePlayerHitboxConfiguration(GameObject target)
+        {
+            var hitboxRoot = target.GetComponent<global::Fusion.HitboxRoot>();
+            var hitbox = target.GetComponent<global::Fusion.Hitbox>();
+            var changed = hitboxRoot.BroadRadius != 1.1f || hitboxRoot.Offset != Vector3.zero;
+            changed |= hitbox.Type != global::Fusion.HitboxTypes.Capsule || hitbox.CapsuleRadius != 0.5f || hitbox.CapsuleExtents != 2f || hitbox.Offset != Vector3.zero;
+            hitboxRoot.BroadRadius = 1.1f;
+            hitboxRoot.Offset = Vector3.zero;
+            hitbox.Type = global::Fusion.HitboxTypes.Capsule;
+            hitbox.CapsuleRadius = 0.5f;
+            hitbox.CapsuleExtents = 2f;
+            hitbox.Offset = Vector3.zero;
             return changed;
         }
 
