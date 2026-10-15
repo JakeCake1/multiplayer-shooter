@@ -17,6 +17,7 @@ namespace Shooter.Bootstrap.Editor
         private const string ServerScenePath = "Assets/Scenes/LocalServer.unity";
         private const string PlayerPrefabPath = "Assets/Shooter/Infrastructure/Fusion/Prefabs/Player.prefab";
         private const string MatchStatePrefabPath = "Assets/Shooter/Infrastructure/Fusion/Prefabs/MatchState.prefab";
+        private const string ArenaPrefabPath = "Assets/Shooter/Infrastructure/Fusion/Prefabs/Arena.prefab";
 
         [InitializeOnLoadMethod]
         private static void CreateMissingScenesAfterImport()
@@ -29,6 +30,7 @@ namespace Shooter.Bootstrap.Editor
         {
             EnsurePlayerPrefab();
             EnsureMatchStatePrefab();
+            EnsureArenaPrefab();
             EnsureAddressableNetworkAssets();
             EnsureScene<ClientLifetimeScope>(ClientScenePath, "Client Lifetime Scope", includeClientPresentation: true);
             EnsureScene<ServerLifetimeScope>(ServerScenePath, "Server Lifetime Scope", includeClientPresentation: false);
@@ -91,6 +93,25 @@ namespace Shooter.Bootstrap.Editor
             }
         }
 
+        private static void EnsureArenaPrefab()
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(ArenaPrefabPath) != null)
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(ArenaPrefabPath));
+            var arena = ArenaPrefabComposition.Create();
+            try
+            {
+                PrefabUtility.SaveAsPrefabAsset(arena, ArenaPrefabPath);
+            }
+            finally
+            {
+                Object.DestroyImmediate(arena);
+            }
+        }
+
         private static void EnsureAddressableNetworkAssets()
         {
             var settings = AddressableAssetSettingsDefaultObject.GetSettings(create: true);
@@ -103,6 +124,7 @@ namespace Shooter.Bootstrap.Editor
 
             changed |= MarkAddressable(settings, PlayerPrefabPath, FusionNetworkAssetAddresses.PlayerPrefab);
             changed |= MarkAddressable(settings, MatchStatePrefabPath, FusionNetworkAssetAddresses.MatchStatePrefab);
+            changed |= MarkAddressable(settings, ArenaPrefabPath, FusionContentAssetAddresses.ArenaPrefab);
             if (changed)
             {
                 EditorUtility.SetDirty(settings);

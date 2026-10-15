@@ -6,12 +6,14 @@ using UnityEngine;
 namespace Shooter.Infrastructure.Fusion
 {
     [RequireComponent(typeof(NetworkObject))]
+    [RequireComponent(typeof(NetworkCharacterController))]
     [RequireComponent(typeof(FusionPlayerHealthState))]
     public sealed class FusionServerPlayerRespawn : NetworkBehaviour
     {
         private const float RespawnDelaySeconds = 7f;
         private static readonly PlayerRespawnRules Rules = new PlayerRespawnRules(RespawnDelaySeconds);
         private FusionPlayerHealthState _healthState;
+        private NetworkCharacterController _characterController;
         private FusionMatchState _matchState;
         private Vector3 _spawnPosition;
 
@@ -35,6 +37,7 @@ namespace Shooter.Infrastructure.Fusion
             }
 
             _healthState = GetComponent<FusionPlayerHealthState>();
+            _characterController = GetComponent<NetworkCharacterController>();
             _spawnPosition = transform.position;
         }
 
@@ -86,7 +89,8 @@ namespace Shooter.Infrastructure.Fusion
                 return;
             }
 
-            transform.position = _spawnPosition;
+            _characterController.Teleport(_spawnPosition);
+            _characterController.Velocity = Vector3.zero;
             _healthState.RestoreFullHealth();
             RespawnCount++;
             IsRespawning = false;

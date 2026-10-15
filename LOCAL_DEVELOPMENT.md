@@ -12,7 +12,7 @@ Dedicated Server + Client A + Client B
     -> input-authority client predicts movement
     -> dedicated server validates automatic fire cadence
     -> server owns authoritative state
-    -> NetworkTransform replicates and reconciles movement
+    -> NetworkCharacterController predicts, collides, and reconciles movement
 ```
 
 ## Build
@@ -46,7 +46,7 @@ Builds/Local/Server/ShooterServer.exe
 
 Both outputs are Development builds with Script Debugging enabled, so Rider can attach to either `ShooterClient` process or the `ShooterServer` process. The server build uses Unity's `StandaloneBuildSubtarget.Server`; it is not a headless client build.
 
-The build also rebuilds Addressables content. `Player` and `MatchState` are loaded by address at runtime and are no longer serialized into the bootstrap scenes.
+The build also rebuilds Addressables content. `Player`, `MatchState`, and the shared collision arena are loaded by address at runtime and are no longer serialized into the bootstrap scenes.
 
 In Rider, use `Run > Attach to Unity Process` and select the exact PID printed by the local launcher.
 
@@ -94,7 +94,7 @@ ShooterServer.exe -batchmode -nographics -logFile -
 
 The server starts the GSDK heartbeat, enters `StandingBy`, and waits for PlayFab allocation. When the Agent activates it, the server reads the GSDK `SessionId` and assigned `serverListeningPort`, then starts the Fusion Server session using those values. A GSDK termination callback gracefully stops Fusion before quitting the process. After the authoritative match reaches `Finished`, a PlayFab server keeps the results session alive for ten seconds, gracefully stops Fusion, and exits so the allocated server can be recycled. Local dedicated servers intentionally remain alive for `Find Game Again`. Development clients launched with a PlayFab matchmaking queue show the approximate remaining shutdown grace period in the debug overlay. The build pipeline temporarily allows the GSDK's local HTTP Agent transport only while producing a dedicated-server build and restores the project setting afterward; client builds retain the project's normal HTTP policy.
 
-The match uses first-person controls. Use `W`, `A`, `S`, and `D` to move relative to the camera, `Space` to jump, the mouse to look, and the left mouse button to fire the automatic weapon. Mouse sensitivity is configured in the main menu from `0.25x` to `5.00x`, defaults to `2.50x`, and is persisted locally. The cursor locks when `Playing` begins; press `Escape` to release it and click the game view to capture it again. Movement, look, and jump are predicted by the owning client and reconciled against the dedicated server. The dedicated server sanitizes yaw/pitch, derives the three-dimensional shot direction, confirms shots only during `Playing`, resolves the raycast, applies damage, and writes the result with a `[Weapon][Server]` prefix.
+The match uses first-person controls. Use `W`, `A`, `S`, and `D` to move relative to the camera, `Space` to jump, the mouse to look, and the left mouse button to fire the automatic weapon. Mouse sensitivity is configured in the main menu from `0.25x` to `5.00x`, defaults to `2.50x`, and is persisted locally. The cursor locks when `Playing` begins; press `Escape` to release it and click the game view to capture it again. Fusion's `NetworkCharacterController` predicts movement, jumping, and collision for the owning client and reconciles them against the dedicated server. Both roles load the same Addressable arena before starting the network runner, so the ground, perimeter walls, and cover participate in identical simulation geometry. The dedicated server sanitizes yaw/pitch, derives the three-dimensional shot direction, confirms shots only during `Playing`, resolves the raycast, applies damage, and writes the result with a `[Weapon][Server]` prefix.
 
 After launch, PowerShell prints a process table with role, PID, session, server port, and log path. Logs are separated into:
 

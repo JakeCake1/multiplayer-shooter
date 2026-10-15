@@ -9,11 +9,13 @@ namespace Shooter.Infrastructure.Fusion
     public sealed class FusionClientNetworkSession : FusionNetworkSessionBase
     {
         private readonly FusionNetworkAssetLoader _assetLoader;
+        private readonly FusionArenaLoader _arenaLoader;
         private readonly IClientInputSettings _inputSettings;
 
-        public FusionClientNetworkSession(FusionNetworkAssetLoader assetLoader, IClientInputSettings inputSettings)
+        public FusionClientNetworkSession(FusionNetworkAssetLoader assetLoader, FusionArenaLoader arenaLoader, IClientInputSettings inputSettings)
         {
             _assetLoader = assetLoader ?? throw new ArgumentNullException(nameof(assetLoader));
+            _arenaLoader = arenaLoader ?? throw new ArgumentNullException(nameof(arenaLoader));
             _inputSettings = inputSettings ?? throw new ArgumentNullException(nameof(inputSettings));
         }
 
@@ -21,7 +23,7 @@ namespace Shooter.Infrastructure.Fusion
 
         protected override async Task PrepareAsync()
         {
-            await _assetLoader.LoadAsync();
+            await Task.WhenAll(_assetLoader.LoadAsync(), _arenaLoader.LoadAsync());
         }
 
         protected override NetworkRunner CreateRunner()

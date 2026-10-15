@@ -18,7 +18,8 @@ namespace Shooter.Bootstrap.Editor
         private static readonly Type[] PlayerComponentTypes =
         {
             typeof(global::Fusion.NetworkObject),
-            typeof(global::Fusion.NetworkTransform),
+            typeof(CharacterController),
+            typeof(global::Fusion.NetworkCharacterController),
             typeof(FusionPlayerAvatar),
             typeof(FusionServerWeapon),
             typeof(FusionPlayerHealthState),
@@ -33,7 +34,20 @@ namespace Shooter.Bootstrap.Editor
 
         public static void EnsurePlayerComponents(string prefabPath)
         {
-            EnsurePrefabComponents(prefabPath, PlayerComponentTypes);
+            var prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                var changed = RemoveLegacyPlayerComponents(prefabRoot);
+                changed |= AddMissingComponents(prefabRoot, PlayerComponentTypes);
+                if (changed)
+                {
+                    PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
         }
 
         public static void AddMatchStateComponents(GameObject target)
@@ -43,6 +57,7 @@ namespace Shooter.Bootstrap.Editor
 
         public static void AddPlayerComponents(GameObject target)
         {
+            RemoveLegacyPlayerComponents(target);
             AddMissingComponents(target, PlayerComponentTypes);
         }
 
@@ -75,6 +90,25 @@ namespace Shooter.Bootstrap.Editor
             }
 
             return changed;
+        }
+
+        private static bool RemoveLegacyPlayerComponents(GameObject target)
+        {
+            var changed = RemoveComponent<global::Fusion.NetworkTransform>(target);
+            changed |= RemoveComponent<CapsuleCollider>(target);
+            return changed;
+        }
+
+        private static bool RemoveComponent<TComponent>(GameObject target) where TComponent : Component
+        {
+            var component = target.GetComponent<TComponent>();
+            if (component == null)
+            {
+                return false;
+            }
+
+            UnityEngine.Object.DestroyImmediate(component);
+            return true;
         }
     }
 }

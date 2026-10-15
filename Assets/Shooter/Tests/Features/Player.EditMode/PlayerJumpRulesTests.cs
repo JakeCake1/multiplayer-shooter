@@ -4,6 +4,14 @@ namespace Shooter.Features.Player.Tests
 {
     public sealed class PlayerJumpRulesTests
     {
+        [TestCase(true, true, true)]
+        [TestCase(true, false, false)]
+        [TestCase(false, true, false)]
+        public void JumpStartsOnlyForGroundedPressedInput(bool jumpPressed, bool isGrounded, bool expected)
+        {
+            Assert.That(PlayerJumpRules.CanStartJump(jumpPressed, isGrounded), Is.EqualTo(expected));
+        }
+
         [Test]
         public void GroundedJumpStartsUpwardMovement()
         {

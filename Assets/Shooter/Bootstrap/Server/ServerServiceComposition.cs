@@ -38,6 +38,7 @@ namespace Shooter.Bootstrap.Server
             builder.RegisterInstance(matchRules);
             builder.Register<ServerMatchLifecycle>(Lifetime.Singleton).As<IServerMatchLifecycle>();
             builder.Register<FusionNetworkAssetLoader>(Lifetime.Singleton);
+            builder.Register<FusionArenaLoader>(Lifetime.Singleton);
             builder.Register<FusionServerNetworkSession>(Lifetime.Singleton).As<INetworkSession>();
         }
 

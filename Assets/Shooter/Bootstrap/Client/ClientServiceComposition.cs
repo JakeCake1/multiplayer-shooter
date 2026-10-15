@@ -14,6 +14,7 @@ namespace Shooter.Bootstrap.Client
         {
             builder.Register<UnityClientInputSettings>(Lifetime.Singleton).As<IClientInputSettings>();
             builder.Register<FusionNetworkAssetLoader>(Lifetime.Singleton);
+            builder.Register<FusionArenaLoader>(Lifetime.Singleton);
             builder.Register<FusionClientNetworkSession>(Lifetime.Singleton).As<INetworkSession>();
             builder.Register<UnityApplicationQuitter>(Lifetime.Singleton).As<IApplicationQuitter>();
             builder.Register<ClientFlowCoordinator>(Lifetime.Singleton).As<IClientFlowController>();
