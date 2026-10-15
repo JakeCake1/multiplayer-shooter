@@ -23,6 +23,7 @@ namespace Shooter.Bootstrap.Editor
             typeof(global::Fusion.HitboxRoot),
             typeof(global::Fusion.Hitbox),
             typeof(FusionPlayerAvatar),
+            typeof(FusionClientPlayerVisibility),
             typeof(FusionServerWeapon),
             typeof(FusionPlayerHealthState),
             typeof(FusionServerPlayerRespawn),

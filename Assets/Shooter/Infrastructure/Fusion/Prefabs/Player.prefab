@@ -21,6 +21,7 @@ GameObject:
   - component: {fileID: 5624527232660998610}
   - component: {fileID: 2523278122868149278}
   - component: {fileID: 3608678825213908118}
+  - component: {fileID: 6471834920812341173}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -125,6 +126,7 @@ MonoBehaviour:
   - {fileID: 6224057028559031476}
   - {fileID: 8115648175667736201}
   - {fileID: 2523278122868149278}
+  - {fileID: 6471834920812341173}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &7208625392393891980
 MonoBehaviour:
@@ -276,3 +278,15 @@ MonoBehaviour:
   Offset: {x: 0, y: 0, z: 0}
   Root: {fileID: 0}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+--- !u!114 &6471834920812341173
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5453754859651628095}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1e720c01d5c46ee9a1fd61d08604713, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Shooter.Infrastructure.Fusion::Shooter.Infrastructure.Fusion.FusionClientPlayerVisibility
