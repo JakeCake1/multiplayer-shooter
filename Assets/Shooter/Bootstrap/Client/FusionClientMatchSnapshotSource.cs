@@ -99,8 +99,10 @@ namespace Shooter.Bootstrap.Client
         {
             var playerId = healthState.Object.InputAuthority.PlayerId;
             var scoreState = healthState.GetComponent<FusionPlayerScoreState>();
+            var weapon = healthState.GetComponent<FusionServerWeapon>();
             var kills = scoreState == null ? 0 : scoreState.Kills;
-            return new ClientPlayerMatchSnapshot(playerId, kills, healthState.CurrentHealth, healthState.MaxHealth, playerId == localPlayerId);
+            var confirmedHitCount = weapon == null ? 0 : weapon.ConfirmedHitCount;
+            return new ClientPlayerMatchSnapshot(playerId, kills, healthState.CurrentHealth, healthState.MaxHealth, playerId == localPlayerId, confirmedHitCount);
         }
 
         private static void InsertPlayer(ClientPlayerMatchSnapshot player, ref ClientPlayerMatchSnapshot firstPlayer, ref ClientPlayerMatchSnapshot secondPlayer)

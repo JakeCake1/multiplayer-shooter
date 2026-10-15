@@ -15,7 +15,7 @@ namespace Shooter.Presentation.ClientFlow
                 throw new ArgumentNullException(nameof(snapshot));
             }
 
-            var viewModel = new PlayingHudViewModel(BuildTime(snapshot.Match), BuildPlayer(snapshot.Match?.FirstPlayer), BuildPlayer(snapshot.Match?.SecondPlayer));
+            var viewModel = new PlayingHudViewModel(BuildTime(snapshot.Match), BuildPlayer(snapshot.Match?.FirstPlayer), BuildPlayer(snapshot.Match?.SecondPlayer), GetLocalConfirmedHitCount(snapshot.Match));
             return new UiScreenRequest(ClientUiScreenAddresses.PlayingHud, viewModel);
         }
 
@@ -34,6 +34,16 @@ namespace Shooter.Presentation.ClientFlow
 
             var name = player.IsLocal ? $"You (Player {player.PlayerId})" : $"Player {player.PlayerId}";
             return $"{name}   HP {player.CurrentHealth}/{player.MaxHealth}   Kills {player.Kills}";
+        }
+
+        private static int GetLocalConfirmedHitCount(ClientMatchSnapshot match)
+        {
+            if (match?.FirstPlayer?.IsLocal == true)
+            {
+                return match.FirstPlayer.ConfirmedHitCount;
+            }
+
+            return match?.SecondPlayer?.IsLocal == true ? match.SecondPlayer.ConfirmedHitCount : 0;
         }
     }
 }

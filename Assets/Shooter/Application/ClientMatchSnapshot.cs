@@ -1,3 +1,5 @@
+using System;
+
 namespace Shooter.Application
 {
     public sealed class ClientMatchSnapshot
@@ -26,5 +28,12 @@ namespace Shooter.Application
         public int WinnerPlayerId { get; }
 
         public bool IsDraw { get; }
+
+        private (ClientMatchStage Stage, int ConnectedPlayerCount, int DisplaySecondsRemaining, ClientPlayerMatchSnapshot FirstPlayer, ClientPlayerMatchSnapshot SecondPlayer, int WinnerPlayerId, bool IsDraw) ObservableStateKey => (Stage, ConnectedPlayerCount, (int)Math.Ceiling(SecondsRemaining), FirstPlayer, SecondPlayer, WinnerPlayerId, IsDraw);
+
+        public bool HasSameObservableState(ClientMatchSnapshot other)
+        {
+            return other != null && ObservableStateKey.Equals(other.ObservableStateKey);
+        }
     }
 }

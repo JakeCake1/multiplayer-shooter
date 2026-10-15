@@ -28,7 +28,7 @@ namespace Shooter.Presentation.Tests
         public void PlayingUsesLiveMatchHud()
         {
             var factory = CreateFactory(new StubClientFlowController());
-            var firstPlayer = new ClientPlayerMatchSnapshot(1, 2, 75, 100, true);
+            var firstPlayer = new ClientPlayerMatchSnapshot(1, 2, 75, 100, true, 3);
             var secondPlayer = new ClientPlayerMatchSnapshot(2, 1, 40, 100);
             var match = new ClientMatchSnapshot(ClientMatchStage.Playing, 2, 65f, firstPlayer, secondPlayer);
 
@@ -39,6 +39,7 @@ namespace Shooter.Presentation.Tests
             Assert.That(viewModel.TimeRemaining, Is.EqualTo("01:05"));
             Assert.That(viewModel.FirstPlayer, Is.EqualTo("You (Player 1)   HP 75/100   Kills 2"));
             Assert.That(viewModel.SecondPlayer, Is.EqualTo("Player 2   HP 40/100   Kills 1"));
+            Assert.That(viewModel.LocalConfirmedHitCount, Is.EqualTo(3));
         }
 
         [TestCase(ClientFlowState.Booting, "Preparing player authentication...")]

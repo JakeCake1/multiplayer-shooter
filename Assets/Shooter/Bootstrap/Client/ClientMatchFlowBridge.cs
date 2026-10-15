@@ -41,17 +41,7 @@ namespace Shooter.Bootstrap.Client
 
         private bool HasChanged(ClientMatchSnapshot snapshot)
         {
-            return _lastSnapshot == null || _lastSnapshot.Stage != snapshot.Stage || _lastSnapshot.ConnectedPlayerCount != snapshot.ConnectedPlayerCount || Mathf.CeilToInt(_lastSnapshot.SecondsRemaining) != Mathf.CeilToInt(snapshot.SecondsRemaining) || PlayerHasChanged(_lastSnapshot.FirstPlayer, snapshot.FirstPlayer) || PlayerHasChanged(_lastSnapshot.SecondPlayer, snapshot.SecondPlayer);
-        }
-
-        private static bool PlayerHasChanged(ClientPlayerMatchSnapshot previous, ClientPlayerMatchSnapshot current)
-        {
-            if (previous == null || current == null)
-            {
-                return previous != current;
-            }
-
-            return previous.PlayerId != current.PlayerId || previous.Kills != current.Kills || previous.CurrentHealth != current.CurrentHealth || previous.MaxHealth != current.MaxHealth || previous.IsLocal != current.IsLocal;
+            return _lastSnapshot == null || !_lastSnapshot.HasSameObservableState(snapshot);
         }
     }
 }

@@ -23,6 +23,9 @@ namespace Shooter.Infrastructure.Fusion
         public int ConfirmedShotCount { get; private set; }
 
         [Networked]
+        public int ConfirmedHitCount { get; private set; }
+
+        [Networked]
         public Vector3 LastShotOrigin { get; private set; }
 
         [Networked]
@@ -125,8 +128,17 @@ namespace Shooter.Infrastructure.Fusion
             }
 
             appliedDamage = target.ApplyDamage(Rules.DamagePerHit);
+            RegisterConfirmedHit(appliedDamage);
             AwardKillIfTargetDied(target);
             return appliedDamage > 0;
+        }
+
+        private void RegisterConfirmedHit(int appliedDamage)
+        {
+            if (appliedDamage > 0)
+            {
+                ConfirmedHitCount++;
+            }
         }
 
         private bool TryResolveLagCompensatedHit(Vector3 shotOrigin, Vector3 shotDirection, out LagCompensatedHit hit)
