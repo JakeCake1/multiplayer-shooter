@@ -4,7 +4,7 @@ namespace Shooter.Application
 {
     public sealed class ClientPlayerMatchSnapshot : IEquatable<ClientPlayerMatchSnapshot>
     {
-        public ClientPlayerMatchSnapshot(int playerId, int kills, int currentHealth = 0, int maxHealth = 0, bool isLocal = false, int confirmedHitCount = 0)
+        public ClientPlayerMatchSnapshot(int playerId, int kills, int currentHealth = 0, int maxHealth = 0, bool isLocal = false, int confirmedHitCount = 0, bool isRespawning = false, int respawnSecondsRemaining = 0)
         {
             PlayerId = playerId;
             Kills = kills;
@@ -12,6 +12,8 @@ namespace Shooter.Application
             MaxHealth = maxHealth;
             IsLocal = isLocal;
             ConfirmedHitCount = confirmedHitCount;
+            IsRespawning = isRespawning;
+            RespawnSecondsRemaining = respawnSecondsRemaining;
         }
 
         public int PlayerId { get; }
@@ -26,7 +28,11 @@ namespace Shooter.Application
 
         public int ConfirmedHitCount { get; }
 
-        private (int PlayerId, int Kills, int CurrentHealth, int MaxHealth, bool IsLocal, int ConfirmedHitCount) EqualityKey => (PlayerId, Kills, CurrentHealth, MaxHealth, IsLocal, ConfirmedHitCount);
+        public bool IsRespawning { get; }
+
+        public int RespawnSecondsRemaining { get; }
+
+        private (int PlayerId, int Kills, int CurrentHealth, int MaxHealth, bool IsLocal, int ConfirmedHitCount, bool IsRespawning, int RespawnSecondsRemaining) EqualityKey => (PlayerId, Kills, CurrentHealth, MaxHealth, IsLocal, ConfirmedHitCount, IsRespawning, RespawnSecondsRemaining);
 
         public bool Equals(ClientPlayerMatchSnapshot other)
         {

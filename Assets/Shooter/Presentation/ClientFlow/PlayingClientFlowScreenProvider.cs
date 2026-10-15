@@ -15,7 +15,8 @@ namespace Shooter.Presentation.ClientFlow
                 throw new ArgumentNullException(nameof(snapshot));
             }
 
-            var viewModel = new PlayingHudViewModel(BuildTime(snapshot.Match), BuildPlayer(snapshot.Match?.FirstPlayer), BuildPlayer(snapshot.Match?.SecondPlayer), GetLocalConfirmedHitCount(snapshot.Match));
+            var localPlayer = GetLocalPlayer(snapshot.Match);
+            var viewModel = new PlayingHudViewModel(BuildTime(snapshot.Match), BuildPlayer(snapshot.Match?.FirstPlayer), BuildPlayer(snapshot.Match?.SecondPlayer), localPlayer?.ConfirmedHitCount ?? 0, BuildRespawnStatus(localPlayer));
             return new UiScreenRequest(ClientUiScreenAddresses.PlayingHud, viewModel);
         }
 
@@ -36,14 +37,19 @@ namespace Shooter.Presentation.ClientFlow
             return $"{name}   HP {player.CurrentHealth}/{player.MaxHealth}   Kills {player.Kills}";
         }
 
-        private static int GetLocalConfirmedHitCount(ClientMatchSnapshot match)
+        private static ClientPlayerMatchSnapshot GetLocalPlayer(ClientMatchSnapshot match)
         {
             if (match?.FirstPlayer?.IsLocal == true)
             {
-                return match.FirstPlayer.ConfirmedHitCount;
+                return match.FirstPlayer;
             }
 
-            return match?.SecondPlayer?.IsLocal == true ? match.SecondPlayer.ConfirmedHitCount : 0;
+            return match?.SecondPlayer?.IsLocal == true ? match.SecondPlayer : null;
+        }
+
+        private static string BuildRespawnStatus(ClientPlayerMatchSnapshot localPlayer)
+        {
+            return localPlayer?.IsRespawning == true ? $"Respawning in {localPlayer.RespawnSecondsRemaining}" : string.Empty;
         }
     }
 }

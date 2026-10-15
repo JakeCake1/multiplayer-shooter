@@ -23,9 +23,18 @@ namespace Shooter.Tests.Application.EditMode
             Assert.That(first.HasSameObservableState(second), Is.False);
         }
 
-        private static ClientMatchSnapshot CreateMatch(float secondsRemaining, int confirmedHitCount)
+        [Test]
+        public void ObservableStateDetectsRespawnCountdownChanges()
         {
-            var localPlayer = new ClientPlayerMatchSnapshot(1, 0, 100, 100, true, confirmedHitCount);
+            var first = CreateMatch(12.9f, confirmedHitCount: 2, respawnSecondsRemaining: 4);
+            var second = CreateMatch(12.9f, confirmedHitCount: 2, respawnSecondsRemaining: 3);
+
+            Assert.That(first.HasSameObservableState(second), Is.False);
+        }
+
+        private static ClientMatchSnapshot CreateMatch(float secondsRemaining, int confirmedHitCount, int respawnSecondsRemaining = 0)
+        {
+            var localPlayer = new ClientPlayerMatchSnapshot(1, 0, 100, 100, true, confirmedHitCount, respawnSecondsRemaining > 0, respawnSecondsRemaining);
             var remotePlayer = new ClientPlayerMatchSnapshot(2, 0, 100, 100);
             return new ClientMatchSnapshot(ClientMatchStage.Playing, 2, secondsRemaining, localPlayer, remotePlayer);
         }

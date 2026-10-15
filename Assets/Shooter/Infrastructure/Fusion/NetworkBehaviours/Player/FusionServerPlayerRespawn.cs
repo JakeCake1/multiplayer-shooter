@@ -10,7 +10,7 @@ namespace Shooter.Infrastructure.Fusion
     [RequireComponent(typeof(FusionPlayerHealthState))]
     public sealed class FusionServerPlayerRespawn : NetworkBehaviour
     {
-        private const float RespawnDelaySeconds = 7f;
+        private const float RespawnDelaySeconds = 3f;
         private static readonly PlayerRespawnRules Rules = new PlayerRespawnRules(RespawnDelaySeconds);
         private FusionPlayerHealthState _healthState;
         private NetworkCharacterController _characterController;

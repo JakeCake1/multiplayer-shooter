@@ -11,6 +11,7 @@ namespace Shooter.Presentation.ClientFlow
         private Label _firstPlayerLabel;
         private Label _secondPlayerLabel;
         private Label _hitMarkerLabel;
+        private Label _respawnStatusLabel;
         private int _lastConfirmedHitCount = -1;
         private int _hitMarkerVersion;
 
@@ -22,6 +23,7 @@ namespace Shooter.Presentation.ClientFlow
             _firstPlayerLabel.text = playing.FirstPlayer;
             _secondPlayerLabel.text = playing.SecondPlayer;
             UpdateHitMarker(playing.LocalConfirmedHitCount);
+            UpdateRespawnStatus(playing.LocalRespawnStatus);
         }
 
         public override void Unbind()
@@ -30,6 +32,7 @@ namespace Shooter.Presentation.ClientFlow
             _firstPlayerLabel = null;
             _secondPlayerLabel = null;
             _hitMarkerLabel = null;
+            _respawnStatusLabel = null;
             _lastConfirmedHitCount = -1;
             _hitMarkerVersion++;
         }
@@ -40,6 +43,7 @@ namespace Shooter.Presentation.ClientFlow
             _firstPlayerLabel ??= QueryRequired<Label>("first-player-label");
             _secondPlayerLabel ??= QueryRequired<Label>("second-player-label");
             _hitMarkerLabel ??= QueryRequired<Label>("hit-marker-label");
+            _respawnStatusLabel ??= QueryRequired<Label>("respawn-status-label");
         }
 
         private void UpdateHitMarker(int confirmedHitCount)
@@ -80,6 +84,12 @@ namespace Shooter.Presentation.ClientFlow
             {
                 _hitMarkerLabel.style.display = DisplayStyle.None;
             }
+        }
+
+        private void UpdateRespawnStatus(string status)
+        {
+            _respawnStatusLabel.text = status;
+            _respawnStatusLabel.style.display = string.IsNullOrEmpty(status) ? DisplayStyle.None : DisplayStyle.Flex;
         }
     }
 }

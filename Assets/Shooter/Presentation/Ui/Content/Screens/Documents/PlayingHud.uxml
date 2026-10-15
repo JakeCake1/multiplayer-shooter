@@ -7,5 +7,6 @@
         </ui:VisualElement>
         <ui:Label text="+" name="crosshair-label" picking-mode="Ignore" style="position: absolute; left: 50%; top: 50%; width: 24px; height: 32px; margin-left: -12px; margin-top: -16px; color: rgb(255, 255, 255); font-size: 28px; -unity-font-style: bold; -unity-text-align: middle-center;"/>
         <ui:Label text="×" name="hit-marker-label" picking-mode="Ignore" style="display: none; position: absolute; left: 50%; top: 50%; width: 40px; height: 48px; margin-left: -20px; margin-top: -24px; color: rgb(255, 202, 92); font-size: 42px; -unity-font-style: bold; -unity-text-align: middle-center;"/>
+        <ui:Label text="Respawning in 3" name="respawn-status-label" picking-mode="Ignore" style="display: none; position: absolute; left: 50%; top: 62%; width: 320px; margin-left: -160px; color: rgb(255, 255, 255); background-color: rgba(10, 14, 22, 0.88); border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; padding-top: 12px; padding-bottom: 12px; font-size: 24px; -unity-font-style: bold; -unity-text-align: middle-center;"/>
     </ui:VisualElement>
 </ui:UXML>
