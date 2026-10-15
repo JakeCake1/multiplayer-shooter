@@ -58,10 +58,7 @@ namespace Shooter.Infrastructure.PlayFab
 
             Debug.Log($"[PlayFab] Matchmaking ticket requested for queue '{_options.QueueName}'.");
             var completion = _activeCompletion;
-            using (cancellationToken.Register(CancelActiveRequest))
-            {
-                return await completion.Task;
-            }
+            return await WaitForCompletionAsync(completion, cancellationToken);
         }
 
         public void Dispose()
@@ -174,6 +171,43 @@ namespace Shooter.Infrastructure.PlayFab
             ClearActiveRequest();
             ticket?.Cancel();
             completion?.TrySetCanceled();
+        }
+
+        private async Task<MatchmakingResult> WaitForCompletionAsync(TaskCompletionSource<MatchmakingResult> completion, CancellationToken cancellationToken)
+        {
+            using (cancellationToken.Register(CancelActiveRequest))
+            using (var timeoutCancellation = new CancellationTokenSource())
+            {
+                var timeout = Task.Delay(_options.CompletionWatchdogTimeout, timeoutCancellation.Token);
+                if (await Task.WhenAny(completion.Task, timeout) == completion.Task)
+                {
+                    timeoutCancellation.Cancel();
+                    return await completion.Task;
+                }
+
+                return CompleteTimedOutRequest(completion);
+            }
+        }
+
+        private MatchmakingResult CompleteTimedOutRequest(TaskCompletionSource<MatchmakingResult> completion)
+        {
+            if (!ReferenceEquals(completion, _activeCompletion))
+            {
+                return completion.Task.GetAwaiter().GetResult();
+            }
+
+            var ticket = _activeTicket;
+            var timeoutSeconds = _options.CompletionWatchdogTimeout.TotalSeconds;
+            var result = MatchmakingResult.Failure($"PlayFab matchmaking timed out after {timeoutSeconds:0} seconds.");
+            if (!completion.TrySetResult(result))
+            {
+                return completion.Task.GetAwaiter().GetResult();
+            }
+
+            ClearActiveRequest();
+            ticket?.Cancel();
+            Debug.LogWarning($"[PlayFab] Matchmaking completion watchdog expired after {timeoutSeconds:0} seconds; the active ticket was cancelled.");
+            return result;
         }
 
         private void ClearActiveRequest()
