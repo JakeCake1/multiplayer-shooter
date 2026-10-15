@@ -8,7 +8,7 @@ namespace Shooter.Presentation.Tests
     {
         public event Action<ClientFlowSnapshot> Changed;
 
-        public ClientFlowSnapshot Current { get; private set; } = new ClientFlowSnapshot(ClientFlowState.Menu, isAuthenticationReady: true);
+        public ClientFlowSnapshot Current { get; private set; } = new ClientFlowSnapshot(ClientFlowState.Menu, isAuthenticationReady: true, canFindGame: true);
 
         public int FindGameRequestCount { get; private set; }
 

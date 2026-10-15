@@ -44,7 +44,7 @@ namespace Shooter.Presentation.ClientFlow
         {
             _problemLabel.text = _viewModel.Problem;
             _problemLabel.style.display = string.IsNullOrWhiteSpace(_viewModel.Problem) ? DisplayStyle.None : DisplayStyle.Flex;
-            _findGameButton.style.display = _viewModel.IsAuthenticationReady ? DisplayStyle.Flex : DisplayStyle.None;
+            _findGameButton.style.display = _viewModel.CanFindGame ? DisplayStyle.Flex : DisplayStyle.None;
             _retryAuthenticationButton.style.display = _viewModel.IsAuthenticationReady ? DisplayStyle.None : DisplayStyle.Flex;
             _sensitivitySlider.lowValue = _viewModel.MinimumMouseSensitivity;
             _sensitivitySlider.highValue = _viewModel.MaximumMouseSensitivity;

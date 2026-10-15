@@ -29,7 +29,7 @@ namespace Shooter.Presentation.ClientFlow
 
         private MainMenuViewModel CreateViewModel(ClientFlowSnapshot snapshot)
         {
-            return new MainMenuViewModel(snapshot.Problem, snapshot.IsAuthenticationReady, _inputSettings.MouseSensitivityMultiplier, _inputSettings.MinimumMouseSensitivityMultiplier, _inputSettings.MaximumMouseSensitivityMultiplier, SetMouseSensitivity, _flowController.RetryAuthenticationAsync, _flowController.FindGameAsync, _flowController.Exit);
+            return new MainMenuViewModel(snapshot.Problem, snapshot.IsAuthenticationReady, snapshot.CanFindGame, _inputSettings.MouseSensitivityMultiplier, _inputSettings.MinimumMouseSensitivityMultiplier, _inputSettings.MaximumMouseSensitivityMultiplier, SetMouseSensitivity, _flowController.RetryAuthenticationAsync, _flowController.FindGameAsync, _flowController.Exit);
         }
 
         private void SetMouseSensitivity(float value)

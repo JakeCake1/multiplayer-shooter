@@ -20,6 +20,7 @@ namespace Shooter.Presentation.Tests
             Assert.That(viewModel, Is.Not.Null);
             Assert.That(viewModel.Problem, Is.EqualTo("offline"));
             Assert.That(viewModel.IsAuthenticationReady, Is.False);
+            Assert.That(viewModel.CanFindGame, Is.False);
             Assert.That(viewModel.MouseSensitivity, Is.EqualTo(2.5f));
             viewModel.SetMouseSensitivity(3f);
             viewModel.RetryAuthenticationAsync().GetAwaiter().GetResult();
@@ -32,12 +33,13 @@ namespace Shooter.Presentation.Tests
         {
             var controller = new StubClientFlowController();
             var factory = CreateFactory(controller);
-            var request = factory.Create(new ClientFlowSnapshot(ClientFlowState.Menu, isAuthenticationReady: true));
+            var request = factory.Create(new ClientFlowSnapshot(ClientFlowState.Menu, isAuthenticationReady: true, canFindGame: true));
             var viewModel = request.ViewModel as MainMenuViewModel;
 
             viewModel.FindGameAsync().GetAwaiter().GetResult();
 
             Assert.That(viewModel.IsAuthenticationReady, Is.True);
+            Assert.That(viewModel.CanFindGame, Is.True);
             Assert.That(controller.FindGameRequestCount, Is.EqualTo(1));
         }
 
