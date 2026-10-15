@@ -28,7 +28,8 @@ namespace Shooter.Infrastructure.Fusion
             SpawnMatchStateIfNeeded();
 
             var horizontal = player.PlayerId % 2 == 0 ? 2f : -2f;
-            var playerObject = Runner.Spawn(_playerPrefab, new Vector3(horizontal, 1f, 0f), Quaternion.identity, player);
+            var spawnRotation = player.PlayerId % 2 == 0 ? Quaternion.Euler(0f, -90f, 0f) : Quaternion.Euler(0f, 90f, 0f);
+            var playerObject = Runner.Spawn(_playerPrefab, new Vector3(horizontal, 1f, 0f), spawnRotation, player);
 
             Runner.SetPlayerObject(player, playerObject);
         }

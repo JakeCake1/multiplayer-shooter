@@ -4,36 +4,31 @@ using UnityEngine.InputSystem;
 
 namespace Shooter.Infrastructure.Fusion
 {
-    internal static class FusionClientInputCollector
+    internal sealed class FusionClientInputCollector
     {
-        public static void Collect(NetworkRunner runner, NetworkInput networkInput)
+        private readonly FusionFirstPersonLookController _lookController;
+
+        public FusionClientInputCollector(FusionFirstPersonLookController lookController)
         {
-            var input = new FusionPlayerInput { MoveDirection = ReadMovement(), AimDirection = ReadAimDirection(runner) };
-            input.Buttons.Set(FusionPlayerButton.Fire, IsFireHeld());
-            networkInput.Set(input);
+            _lookController = lookController;
         }
 
-        private static Vector2 ReadAimDirection(NetworkRunner runner)
+        public void Collect(NetworkRunner _, NetworkInput networkInput)
         {
-            if (Mouse.current == null || Camera.main == null || !runner.TryGetPlayerObject(runner.LocalPlayer, out var playerObject))
-            {
-                return Vector2.zero;
-            }
-
-            var pointerRay = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-            var aimPlane = new Plane(Vector3.up, playerObject.transform.position);
-            if (!aimPlane.Raycast(pointerRay, out var distance))
-            {
-                return Vector2.zero;
-            }
-
-            var worldDirection = pointerRay.GetPoint(distance) - playerObject.transform.position;
-            return new Vector2(worldDirection.x, worldDirection.z).normalized;
+            var input = new FusionPlayerInput { MoveDirection = ReadMovement(), LookRotation = _lookController.NetworkLookRotation };
+            input.Buttons.Set(FusionPlayerButton.Fire, IsFireHeld());
+            input.Buttons.Set(FusionPlayerButton.Jump, IsJumpHeld());
+            networkInput.Set(input);
         }
 
         private static bool IsFireHeld()
         {
-            return Mouse.current != null && Mouse.current.leftButton.isPressed;
+            return Mouse.current != null && Cursor.lockState == CursorLockMode.Locked && Mouse.current.leftButton.isPressed;
+        }
+
+        private static bool IsJumpHeld()
+        {
+            return Keyboard.current != null && Keyboard.current.spaceKey.isPressed;
         }
 
         private static Vector2 ReadMovement()

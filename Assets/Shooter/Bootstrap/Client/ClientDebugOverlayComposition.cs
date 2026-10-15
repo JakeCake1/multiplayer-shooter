@@ -15,10 +15,9 @@ namespace Shooter.Bootstrap.Client
         {
             target.AddComponent<MatchStateDebugOverlay>();
             target.AddComponent<WeaponShotDebugOverlay>();
-            target.AddComponent<HealthDebugOverlay>();
             target.AddComponent<RespawnDebugOverlay>();
-            target.AddComponent<ScoreDebugOverlay>();
             target.AddComponent<MatchResultDebugOverlay>();
+            target.AddComponent<ServerShutdownDebugOverlay>();
         }
     }
 }

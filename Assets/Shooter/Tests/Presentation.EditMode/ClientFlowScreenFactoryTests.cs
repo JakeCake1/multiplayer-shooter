@@ -10,7 +10,8 @@ namespace Shooter.Presentation.Tests
         public void MenuMapsToMainMenuViewModelAndCommands()
         {
             var controller = new StubClientFlowController();
-            var factory = CreateFactory(controller);
+            var inputSettings = new StubClientInputSettings();
+            var factory = CreateFactory(controller, inputSettings);
 
             var request = factory.Create(new ClientFlowSnapshot(ClientFlowState.Menu, "offline"));
             var viewModel = request.ViewModel as MainMenuViewModel;
@@ -18,16 +19,26 @@ namespace Shooter.Presentation.Tests
             Assert.That(request.Address, Is.EqualTo(ClientUiScreenAddresses.MainMenu));
             Assert.That(viewModel, Is.Not.Null);
             Assert.That(viewModel.Problem, Is.EqualTo("offline"));
+            Assert.That(viewModel.MouseSensitivity, Is.EqualTo(2.5f));
+            viewModel.SetMouseSensitivity(3f);
+            Assert.That(inputSettings.MouseSensitivityMultiplier, Is.EqualTo(3f));
         }
 
         [Test]
-        public void PlayingDoesNotRequestBlockingScreen()
+        public void PlayingUsesLiveMatchHud()
         {
             var factory = CreateFactory(new StubClientFlowController());
+            var firstPlayer = new ClientPlayerMatchSnapshot(1, 2, 75, 100, true);
+            var secondPlayer = new ClientPlayerMatchSnapshot(2, 1, 40, 100);
+            var match = new ClientMatchSnapshot(ClientMatchStage.Playing, 2, 65f, firstPlayer, secondPlayer);
 
-            var request = factory.Create(new ClientFlowSnapshot(ClientFlowState.Playing));
+            var request = factory.Create(new ClientFlowSnapshot(ClientFlowState.Playing, match: match));
+            var viewModel = request.ViewModel as PlayingHudViewModel;
 
-            Assert.That(request, Is.Null);
+            Assert.That(request.Address, Is.EqualTo(ClientUiScreenAddresses.PlayingHud));
+            Assert.That(viewModel.TimeRemaining, Is.EqualTo("01:05"));
+            Assert.That(viewModel.FirstPlayer, Is.EqualTo("You (Player 1)   HP 75/100   Kills 2"));
+            Assert.That(viewModel.SecondPlayer, Is.EqualTo("Player 2   HP 40/100   Kills 1"));
         }
 
         [TestCase(ClientFlowState.Booting, "Preparing player authentication...")]
@@ -48,7 +59,7 @@ namespace Shooter.Presentation.Tests
         public void ResultsUseAuthoritativeSnapshot()
         {
             var factory = CreateFactory(new StubClientFlowController());
-            var match = new ClientMatchSnapshot(ClientMatchStage.Results, 2, 0f, 1, 4, 2, 3, 1);
+            var match = new ClientMatchSnapshot(ClientMatchStage.Results, 2, 0f, new ClientPlayerMatchSnapshot(1, 4), new ClientPlayerMatchSnapshot(2, 3), 1);
 
             var request = factory.Create(new ClientFlowSnapshot(ClientFlowState.Results, match: match));
             var viewModel = request.ViewModel as ResultsViewModel;
@@ -78,7 +89,12 @@ namespace Shooter.Presentation.Tests
 
         private static ClientFlowScreenFactory CreateFactory(StubClientFlowController controller)
         {
-            var providers = new IClientFlowScreenProvider[] { new BootingClientFlowScreenProvider(), new MenuClientFlowScreenProvider(controller), new SearchingClientFlowScreenProvider(), new ConnectingClientFlowScreenProvider(), new WaitingForPlayersClientFlowScreenProvider(), new PlayingClientFlowScreenProvider(), new ResultsClientFlowScreenProvider(controller) };
+            return CreateFactory(controller, new StubClientInputSettings());
+        }
+
+        private static ClientFlowScreenFactory CreateFactory(StubClientFlowController controller, StubClientInputSettings inputSettings)
+        {
+            var providers = new IClientFlowScreenProvider[] { new BootingClientFlowScreenProvider(), new MenuClientFlowScreenProvider(controller, inputSettings), new SearchingClientFlowScreenProvider(), new ConnectingClientFlowScreenProvider(), new WaitingForPlayersClientFlowScreenProvider(), new PlayingClientFlowScreenProvider(), new ResultsClientFlowScreenProvider(controller) };
             return new ClientFlowScreenFactory(providers);
         }
     }

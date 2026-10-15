@@ -1,5 +1,6 @@
 using System;
 using Shooter.Features.MatchRules;
+using Shooter.Infrastructure.PlayFab;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -22,11 +23,22 @@ namespace Shooter.Bootstrap.Server
 
         protected override void Configure(IContainerBuilder builder)
         {
+            var matchRules = CreateMatchRules();
+            if (PlayFabServerEnvironment.IsConfigured())
+            {
+                ServerServiceComposition.RegisterPlayFab(builder, matchRules);
+                return;
+            }
+
             var arguments = Environment.GetCommandLineArgs();
             var request = LocalNetworkLaunchArguments.CreateServerRequest(arguments);
             var shutdownSignalPath = LocalNetworkLaunchArguments.GetShutdownSignalPath(arguments);
-            var matchRules = new MatchRules(requiredPlayerCount, countdownSeconds, matchSeconds, finishingSeconds);
-            ServerServiceComposition.Register(builder, matchRules, request, shutdownSignalPath);
+            ServerServiceComposition.RegisterLocal(builder, matchRules, request, shutdownSignalPath);
+        }
+
+        private MatchRules CreateMatchRules()
+        {
+            return new MatchRules(requiredPlayerCount, countdownSeconds, matchSeconds, finishingSeconds);
         }
     }
 }

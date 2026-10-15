@@ -77,6 +77,7 @@ namespace Shooter.Bootstrap.Editor
 
             var buildOptions = new BuildPlayerOptions { scenes = new[] { scenePath }, locationPathName = outputPath, target = BuildTarget.StandaloneWindows64, subtarget = (int)subtarget, options = options };
             Debug.Log($"[LocalBuild] Starting {subtarget} build at '{outputPath}'. Clean build cache: {cleanBuildCache}.");
+            var previousHttpOption = ConfigureHttpPolicy(subtarget);
             BuildReport report;
             try
             {
@@ -84,6 +85,7 @@ namespace Shooter.Bootstrap.Editor
             }
             finally
             {
+                PlayerSettings.insecureHttpOption = previousHttpOption;
                 EditorUtility.ClearProgressBar();
             }
 
@@ -93,6 +95,17 @@ namespace Shooter.Bootstrap.Editor
             }
 
             Debug.Log($"[LocalBuild] Finished {subtarget} build in {report.summary.totalTime.TotalSeconds:F1}s at '{outputPath}'.");
+        }
+
+        private static InsecureHttpOption ConfigureHttpPolicy(StandaloneBuildSubtarget subtarget)
+        {
+            var previousOption = PlayerSettings.insecureHttpOption;
+            if (subtarget == StandaloneBuildSubtarget.Server)
+            {
+                PlayerSettings.insecureHttpOption = InsecureHttpOption.AlwaysAllowed;
+            }
+
+            return previousOption;
         }
     }
 }

@@ -3,7 +3,8 @@
     "rootNamespace": "Shooter.Infrastructure.PlayFab",
     "references": [
         "Shooter.Application",
-        "PlayFabAssembly"
+        "PlayFabAssembly",
+        "PlayFabSDKAssembly"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

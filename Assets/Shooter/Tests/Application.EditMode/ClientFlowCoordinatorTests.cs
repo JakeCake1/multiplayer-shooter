@@ -90,7 +90,7 @@ namespace Shooter.Application.Tests
             coordinator.ObserveMatch(new ClientMatchSnapshot(ClientMatchStage.Playing, 2, 30f));
             Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Playing));
 
-            coordinator.ObserveMatch(new ClientMatchSnapshot(ClientMatchStage.Results, 2, 0f, 1, 3, 2, 1, 1));
+            coordinator.ObserveMatch(new ClientMatchSnapshot(ClientMatchStage.Results, 2, 0f, new ClientPlayerMatchSnapshot(1, 3), new ClientPlayerMatchSnapshot(2, 1), 1));
             Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Results));
             Assert.That(coordinator.Current.Match.WinnerPlayerId, Is.EqualTo(1));
         }

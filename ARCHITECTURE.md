@@ -144,7 +144,7 @@ Client-facing behavior:
 
 Presentation invokes application capabilities. It does not invoke PlayFab SDK calls directly.
 
-Client flow UI follows MVVM. `ClientFlowUiPresenter` converts observed application flow into a screen request through `ClientFlowScreenFactory`; the factory delegates each state to an `IClientFlowScreenProvider`, while `ClientFlowScreenComposition` owns the extensible provider list. `UiController` contains only stable Addressable screen lifecycle behavior; each UI Toolkit View binds a typed, Unity-independent ViewModel. Adding a state-specific screen therefore adds a provider and one composition registration without changing the factory or resource lifecycle code. Runtime UI prefabs are Addressables and own their `UIDocument`, UXML, USS, and View component.
+Client flow UI follows MVVM. `ClientFlowUiPresenter` converts observed application flow into a screen request through `ClientFlowScreenFactory`; the factory delegates each state to an `IClientFlowScreenProvider`, while `ClientFlowScreenComposition` owns the extensible provider list. `UiController` contains only stable Addressable screen lifecycle behavior; each UI Toolkit View binds a typed, Unity-independent ViewModel. Adding a state-specific screen therefore adds a provider and one composition registration without changing the factory or resource lifecycle code. Runtime UI prefabs are Addressables and own their `UIDocument`, UXML, USS, and View component. During `Playing`, `FusionClientMatchSnapshotSource` translates replicated Fusion health and score into vendor-neutral application snapshots; the Addressable playing HUD presents the timer and both player rows without referencing Fusion from Presentation.
 
 ### Infrastructure.Fusion
 Concrete Photon Fusion integration. Direct Fusion usage is expected here.
@@ -164,7 +164,7 @@ Do not create project-owned equivalents for every Fusion primitive such as `INet
 
 The authoritative match adapter is split by responsibility: `FusionServerMatchController` advances pure `MatchStateMachine` rules, `FusionMatchState` contains only replicated state, and `FusionMatchStateObserver` handles client observation. `MatchPhaseRules` defines when gameplay input is accepted, while `FusionPlayerAvatar` applies that rule to the replicated phase on both the authoritative and predicted simulation paths. Network prefabs are resolved through `FusionNetworkAssetLoader`; bootstrap scenes do not serialize prefab references.
 
-The initial combat adapter sends fire and planar aim intent through Fusion input. `FusionServerWeapon` validates aim and fire cadence, performs the authoritative `Physics.Raycast`, applies damage through `FusionPlayerHealthState`, and replicates the most recent confirmed trace endpoints for client debug presentation; clients only observe these server results. This local baseline tests hits against the server's current simulation state and intentionally does not include lag compensation yet.
+The player adapter sends planar movement, jump, fire, and planar aim intent through Fusion input. `FusionPlayerAvatar` predicts movement for the input-authority client while the dedicated server remains the state authority; the pure Player feature owns planar displacement and ballistic jump rules. The MVP jump uses the player's spawn height as its ground plane and intentionally does not yet include arbitrary level collision or moving platforms. `FusionServerWeapon` validates aim and fire cadence, performs the authoritative `Physics.Raycast`, applies damage through `FusionPlayerHealthState`, and replicates the most recent confirmed trace endpoints for client debug presentation; clients only observe these server results. This local baseline tests hits against the server's current simulation state and intentionally does not include lag compensation yet.
 
 `FusionServerPlayerRespawn` owns the server-only death countdown and restores full health at the player's original spawn position after three seconds. Replicated health gates movement and firing on both simulation paths, while the respawn timer is replicated only for client presentation. Pending respawns are cancelled when the authoritative match leaves `Playing`.
 
@@ -180,7 +180,9 @@ Concrete PlayFab integration:
 - client QoS measurement and matchmaking latency attributes;
 - matchmaking ticket lifecycle;
 - match result/allocation data translation;
-- Multiplayer Servers integration needed by client/server lifecycle.
+- Multiplayer Servers GSDK lifecycle and allocation translation.
+
+`IServerAllocationService` is the application-facing server seam. Local composition returns the command-line session request immediately; PlayFab composition waits for the GSDK `Active` callback and translates `SessionId` plus the assigned internal port into the same project-owned request. Fusion reports the authoritative `Finished` transition through `IServerMatchLifecycle`; `ServerNetworkSessionHost` owns stable start/stop orchestration and applies the role-specific process policy registered by Bootstrap. PlayFab servers shut down after the results grace period, while local servers remain alive for repeated development matches. Fusion therefore does not depend on GSDK types and local shutdown remains available without PlayFab.
 
 Expose project/application models across the boundary rather than PlayFab SDK models where useful.
 
@@ -237,6 +239,8 @@ Use prediction only where it improves responsiveness and can be corrected by aut
 
 ### Client Presentation
 Camera, HUD, animation, sound, VFX, crosshair, menus, and non-authoritative feedback remain client-side.
+
+The active match uses a first-person presentation. `FusionFirstPersonCamera` exists only in the client session, follows the locally owned predicted avatar at eye height, applies the smoothed local visual look rotation, hides only the local body renderer, and owns cursor capture. `FusionFirstPersonLookController` samples mouse delta once per Unity frame, applies the persisted client sensitivity multiplier, exposes an unsmoothed target rotation to Fusion input, and smooths only the camera presentation. The input payload carries movement intent plus sanitized yaw/pitch; the server derives and normalizes the three-dimensional shot ray from those angles before authoritative hit resolution.
 
 ## State Machines
 Do not collapse all runtime flow into one manager.

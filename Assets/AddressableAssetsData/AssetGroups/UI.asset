@@ -35,6 +35,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 67dc1bfa09284d6ebc2f3a4e5d6c7b81
+    m_Address: ui/screens/playing-hud
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 4c1e52649896235459c1c1c6435fb982, type: 2}
   m_SchemaSet:

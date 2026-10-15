@@ -1,7 +1,7 @@
 # Multiplayer Shooter — Project Specification
 
 ## Purpose
-Portfolio project: a minimal PC 1v1 multiplayer shooter that demonstrates production-minded multiplayer architecture, dedicated-server authority, networking fundamentals, backend matchmaking, and clean separation of gameplay from vendor-specific networking code.
+Portfolio project: a minimal PC 1v1 first-person multiplayer shooter that demonstrates production-minded multiplayer architecture, dedicated-server authority, networking fundamentals, backend matchmaking, and clean separation of gameplay from vendor-specific networking code.
 
 The priority is engineering quality and a complete multiplayer lifecycle, not content volume.
 

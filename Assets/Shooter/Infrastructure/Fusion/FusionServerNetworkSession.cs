@@ -11,11 +11,13 @@ namespace Shooter.Infrastructure.Fusion
     {
         private readonly FusionNetworkAssetLoader _assetLoader;
         private readonly MatchRules _matchRules;
+        private readonly IServerMatchLifecycle _matchLifecycle;
 
-        public FusionServerNetworkSession(FusionNetworkAssetLoader assetLoader, MatchRules matchRules)
+        public FusionServerNetworkSession(FusionNetworkAssetLoader assetLoader, MatchRules matchRules, IServerMatchLifecycle matchLifecycle)
         {
             _assetLoader = assetLoader ?? throw new ArgumentNullException(nameof(assetLoader));
             _matchRules = matchRules ?? throw new ArgumentNullException(nameof(matchRules));
+            _matchLifecycle = matchLifecycle ?? throw new ArgumentNullException(nameof(matchLifecycle));
         }
 
         protected override NetworkSessionRole Role => NetworkSessionRole.Server;
@@ -30,7 +32,7 @@ namespace Shooter.Infrastructure.Fusion
             var runner = CreateRunnerBase();
             runner.ProvideInput = false;
             var matchController = runner.gameObject.AddComponent<FusionServerMatchController>();
-            matchController.Configure(_matchRules);
+            matchController.Configure(_matchRules, _matchLifecycle);
             var assets = _assetLoader.Assets;
             runner.gameObject.AddComponent<FusionServerPlayerSpawner>().Configure(assets.PlayerPrefab, assets.MatchStatePrefab, matchController);
             return runner;

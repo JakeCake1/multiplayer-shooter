@@ -6,7 +6,7 @@ namespace Shooter.Infrastructure.Fusion
     public struct FusionPlayerInput : INetworkInput
     {
         public Vector2 MoveDirection;
-        public Vector2 AimDirection;
+        public Vector2 LookRotation;
         public NetworkButtons Buttons;
     }
 }

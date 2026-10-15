@@ -9,10 +9,12 @@ namespace Shooter.Infrastructure.Fusion
     public sealed class FusionClientNetworkSession : FusionNetworkSessionBase
     {
         private readonly FusionNetworkAssetLoader _assetLoader;
+        private readonly IClientInputSettings _inputSettings;
 
-        public FusionClientNetworkSession(FusionNetworkAssetLoader assetLoader)
+        public FusionClientNetworkSession(FusionNetworkAssetLoader assetLoader, IClientInputSettings inputSettings)
         {
             _assetLoader = assetLoader ?? throw new ArgumentNullException(nameof(assetLoader));
+            _inputSettings = inputSettings ?? throw new ArgumentNullException(nameof(inputSettings));
         }
 
         protected override NetworkSessionRole Role => NetworkSessionRole.Client;
@@ -28,7 +30,12 @@ namespace Shooter.Infrastructure.Fusion
             runner.ProvideInput = true;
             var events = runner.gameObject.AddComponent<NetworkEvents>();
             events.OnInput ??= new NetworkEvents.InputEvent();
-            events.OnInput.AddListener(FusionClientInputCollector.Collect);
+            var lookController = runner.gameObject.AddComponent<FusionFirstPersonLookController>();
+            lookController.Configure(runner, _inputSettings);
+            var inputCollector = new FusionClientInputCollector(lookController);
+            events.OnInput.AddListener(inputCollector.Collect);
+            var firstPersonCamera = runner.gameObject.AddComponent<FusionFirstPersonCamera>();
+            firstPersonCamera.Configure(runner, lookController);
             return runner;
         }
 
