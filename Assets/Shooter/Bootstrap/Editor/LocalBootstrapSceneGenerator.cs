@@ -95,11 +95,28 @@ namespace Shooter.Bootstrap.Editor
 
         private static void EnsureArenaPrefab()
         {
-            if (AssetDatabase.LoadAssetAtPath<GameObject>(ArenaPrefabPath) != null)
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(ArenaPrefabPath) == null)
             {
+                CreateArenaPrefab();
                 return;
             }
 
+            var prefabRoot = PrefabUtility.LoadPrefabContents(ArenaPrefabPath);
+            try
+            {
+                if (ArenaPrefabComposition.Ensure(prefabRoot))
+                {
+                    PrefabUtility.SaveAsPrefabAsset(prefabRoot, ArenaPrefabPath);
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        private static void CreateArenaPrefab()
+        {
             Directory.CreateDirectory(Path.GetDirectoryName(ArenaPrefabPath));
             var arena = ArenaPrefabComposition.Create();
             try
