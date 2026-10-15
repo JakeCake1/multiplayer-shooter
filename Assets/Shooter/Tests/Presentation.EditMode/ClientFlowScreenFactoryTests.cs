@@ -55,6 +55,20 @@ namespace Shooter.Presentation.Tests
 
             Assert.That(request.Address, Is.EqualTo(ClientUiScreenAddresses.Connecting));
             Assert.That(viewModel.Status, Is.EqualTo(status));
+            Assert.That(viewModel.CanCancel, Is.EqualTo(state == ClientFlowState.Searching));
+        }
+
+        [Test]
+        public void SearchingCancelRequestsFlowCancellation()
+        {
+            var controller = new StubClientFlowController();
+            var factory = CreateFactory(controller);
+            var request = factory.Create(new ClientFlowSnapshot(ClientFlowState.Searching));
+            var viewModel = request.ViewModel as ConnectingViewModel;
+
+            viewModel.RequestCancel();
+
+            Assert.That(controller.CancelSearchRequestCount, Is.EqualTo(1));
         }
 
         [Test]
@@ -96,7 +110,7 @@ namespace Shooter.Presentation.Tests
 
         private static ClientFlowScreenFactory CreateFactory(StubClientFlowController controller, StubClientInputSettings inputSettings)
         {
-            var providers = new IClientFlowScreenProvider[] { new BootingClientFlowScreenProvider(), new MenuClientFlowScreenProvider(controller, inputSettings), new SearchingClientFlowScreenProvider(), new ConnectingClientFlowScreenProvider(), new WaitingForPlayersClientFlowScreenProvider(), new PlayingClientFlowScreenProvider(), new ResultsClientFlowScreenProvider(controller) };
+            var providers = new IClientFlowScreenProvider[] { new BootingClientFlowScreenProvider(), new MenuClientFlowScreenProvider(controller, inputSettings), new SearchingClientFlowScreenProvider(controller), new ConnectingClientFlowScreenProvider(), new WaitingForPlayersClientFlowScreenProvider(), new PlayingClientFlowScreenProvider(), new ResultsClientFlowScreenProvider(controller) };
             return new ClientFlowScreenFactory(providers);
         }
     }

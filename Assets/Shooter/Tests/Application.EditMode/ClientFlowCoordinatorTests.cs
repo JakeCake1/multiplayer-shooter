@@ -68,6 +68,24 @@ namespace Shooter.Application.Tests
         }
 
         [Test]
+        public async Task CancelSearchReturnsToMenuWithoutStartingNetwork()
+        {
+            var matchmaking = new FakeMatchmakingService { WaitForCancellation = true };
+            var session = new FakeNetworkSession();
+            var coordinator = CreateCoordinator(session, matchmakingService: matchmaking);
+            await coordinator.InitializeAsync();
+            var findGame = coordinator.FindGameAsync();
+            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Searching));
+
+            coordinator.CancelSearch();
+            await findGame;
+
+            Assert.That(session.StartCount, Is.Zero);
+            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
+            Assert.That(coordinator.Current.Problem, Is.Empty);
+        }
+
+        [Test]
         public async Task FailedConnectionReturnsToMenuWithProblem()
         {
             var session = new FakeNetworkSession { StartResult = NetworkSessionStartResult.Failure(NetworkSessionError.ConnectionFailed, "offline") };

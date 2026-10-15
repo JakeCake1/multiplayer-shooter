@@ -13,6 +13,8 @@ namespace Shooter.Application
 
         Task FindGameAsync();
 
+        void CancelSearch();
+
         void ObserveMatch(ClientMatchSnapshot snapshot);
 
         void Exit();

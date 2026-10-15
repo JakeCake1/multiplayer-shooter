@@ -90,6 +90,18 @@ namespace Shooter.Application
             Publish(new ClientFlowSnapshot(MapState(snapshot.Stage), match: snapshot));
         }
 
+        public void CancelSearch()
+        {
+            if (Current.State != ClientFlowState.Searching)
+            {
+                return;
+            }
+
+            CancelOperation();
+            _startingNetworkSession = false;
+            Publish(new ClientFlowSnapshot(ClientFlowState.Menu));
+        }
+
         public void Exit()
         {
             CancelOperation();

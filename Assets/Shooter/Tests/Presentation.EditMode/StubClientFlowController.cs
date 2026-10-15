@@ -12,6 +12,8 @@ namespace Shooter.Presentation.Tests
 
         public int FindGameRequestCount { get; private set; }
 
+        public int CancelSearchRequestCount { get; private set; }
+
         public bool ExitRequested { get; private set; }
 
         public Task InitializeAsync()
@@ -23,6 +25,11 @@ namespace Shooter.Presentation.Tests
         {
             FindGameRequestCount++;
             return Task.CompletedTask;
+        }
+
+        public void CancelSearch()
+        {
+            CancelSearchRequestCount++;
         }
 
         public void ObserveMatch(ClientMatchSnapshot snapshot)
