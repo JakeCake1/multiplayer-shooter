@@ -13,15 +13,32 @@ namespace Shooter.Presentation.Tests
             var inputSettings = new StubClientInputSettings();
             var factory = CreateFactory(controller, inputSettings);
 
-            var request = factory.Create(new ClientFlowSnapshot(ClientFlowState.Menu, "offline"));
+            var request = factory.Create(new ClientFlowSnapshot(ClientFlowState.Menu, "offline", isAuthenticationReady: false));
             var viewModel = request.ViewModel as MainMenuViewModel;
 
             Assert.That(request.Address, Is.EqualTo(ClientUiScreenAddresses.MainMenu));
             Assert.That(viewModel, Is.Not.Null);
             Assert.That(viewModel.Problem, Is.EqualTo("offline"));
+            Assert.That(viewModel.IsAuthenticationReady, Is.False);
             Assert.That(viewModel.MouseSensitivity, Is.EqualTo(2.5f));
             viewModel.SetMouseSensitivity(3f);
+            viewModel.RetryAuthenticationAsync().GetAwaiter().GetResult();
             Assert.That(inputSettings.MouseSensitivityMultiplier, Is.EqualTo(3f));
+            Assert.That(controller.RetryAuthenticationRequestCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AuthenticatedMenuEnablesFindingGame()
+        {
+            var controller = new StubClientFlowController();
+            var factory = CreateFactory(controller);
+            var request = factory.Create(new ClientFlowSnapshot(ClientFlowState.Menu, isAuthenticationReady: true));
+            var viewModel = request.ViewModel as MainMenuViewModel;
+
+            viewModel.FindGameAsync().GetAwaiter().GetResult();
+
+            Assert.That(viewModel.IsAuthenticationReady, Is.True);
+            Assert.That(controller.FindGameRequestCount, Is.EqualTo(1));
         }
 
         [Test]

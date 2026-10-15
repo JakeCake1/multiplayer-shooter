@@ -8,6 +8,7 @@ namespace Shooter.Presentation.ClientFlow
     public sealed class MainMenuView : UiToolkitView
     {
         private Button _findGameButton;
+        private Button _retryAuthenticationButton;
         private Button _exitButton;
         private Label _problemLabel;
         private Slider _sensitivitySlider;
@@ -32,6 +33,7 @@ namespace Shooter.Presentation.ClientFlow
         private void ResolveElements()
         {
             _findGameButton = QueryRequired<Button>("find-game-button");
+            _retryAuthenticationButton = QueryRequired<Button>("retry-authentication-button");
             _exitButton = QueryRequired<Button>("exit-button");
             _problemLabel = QueryRequired<Label>("problem-label");
             _sensitivitySlider = QueryRequired<Slider>("sensitivity-slider");
@@ -42,6 +44,8 @@ namespace Shooter.Presentation.ClientFlow
         {
             _problemLabel.text = _viewModel.Problem;
             _problemLabel.style.display = string.IsNullOrWhiteSpace(_viewModel.Problem) ? DisplayStyle.None : DisplayStyle.Flex;
+            _findGameButton.style.display = _viewModel.IsAuthenticationReady ? DisplayStyle.Flex : DisplayStyle.None;
+            _retryAuthenticationButton.style.display = _viewModel.IsAuthenticationReady ? DisplayStyle.None : DisplayStyle.Flex;
             _sensitivitySlider.lowValue = _viewModel.MinimumMouseSensitivity;
             _sensitivitySlider.highValue = _viewModel.MaximumMouseSensitivity;
             _sensitivitySlider.SetValueWithoutNotify(_viewModel.MouseSensitivity);
@@ -51,6 +55,7 @@ namespace Shooter.Presentation.ClientFlow
         private void Subscribe()
         {
             _findGameButton.clicked += HandleFindGameClicked;
+            _retryAuthenticationButton.clicked += HandleRetryAuthenticationClicked;
             _exitButton.clicked += HandleExitClicked;
             _sensitivitySlider.RegisterValueChangedCallback(HandleSensitivityChanged);
         }
@@ -67,6 +72,11 @@ namespace Shooter.Presentation.ClientFlow
                 _exitButton.clicked -= HandleExitClicked;
             }
 
+            if (_retryAuthenticationButton != null)
+            {
+                _retryAuthenticationButton.clicked -= HandleRetryAuthenticationClicked;
+            }
+
             if (_sensitivitySlider != null)
             {
                 _sensitivitySlider.UnregisterValueChangedCallback(HandleSensitivityChanged);
@@ -79,6 +89,23 @@ namespace Shooter.Presentation.ClientFlow
             try
             {
                 await _viewModel.FindGameAsync();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+            finally
+            {
+                SetButtonsEnabled(true);
+            }
+        }
+
+        private async void HandleRetryAuthenticationClicked()
+        {
+            SetButtonsEnabled(false);
+            try
+            {
+                await _viewModel.RetryAuthenticationAsync();
             }
             catch (Exception exception)
             {
@@ -109,6 +136,7 @@ namespace Shooter.Presentation.ClientFlow
         private void SetButtonsEnabled(bool enabled)
         {
             _findGameButton?.SetEnabled(enabled);
+            _retryAuthenticationButton?.SetEnabled(enabled);
             _exitButton?.SetEnabled(enabled);
         }
     }

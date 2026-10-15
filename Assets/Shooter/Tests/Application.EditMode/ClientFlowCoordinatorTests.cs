@@ -22,6 +22,7 @@ namespace Shooter.Application.Tests
 
             Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
             Assert.That(coordinator.Current.Problem, Is.Empty);
+            Assert.That(coordinator.Current.IsAuthenticationReady, Is.True);
         }
 
         [Test]
@@ -34,6 +35,27 @@ namespace Shooter.Application.Tests
 
             Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
             Assert.That(coordinator.Current.Problem, Does.Contain("authentication offline"));
+            Assert.That(coordinator.Current.IsAuthenticationReady, Is.False);
+        }
+
+        [Test]
+        public async Task AuthenticationFailureRequiresExplicitRetryBeforeFindingGame()
+        {
+            var authentication = new FakeAuthenticationService { Result = AuthenticationResult.Failure("authentication offline") };
+            var matchmaking = new FakeMatchmakingService();
+            var coordinator = CreateCoordinator(new FakeNetworkSession(), authentication, matchmaking);
+            await coordinator.InitializeAsync();
+
+            await coordinator.FindGameAsync();
+            Assert.That(matchmaking.CallCount, Is.Zero);
+
+            authentication.Result = AuthenticationResult.Success("test-player");
+            await coordinator.RetryAuthenticationAsync();
+
+            Assert.That(authentication.CallCount, Is.EqualTo(2));
+            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
+            Assert.That(coordinator.Current.IsAuthenticationReady, Is.True);
+            Assert.That(coordinator.Current.Problem, Is.Empty);
         }
 
         [Test]
@@ -83,6 +105,7 @@ namespace Shooter.Application.Tests
             Assert.That(session.StartCount, Is.Zero);
             Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
             Assert.That(coordinator.Current.Problem, Is.Empty);
+            Assert.That(coordinator.Current.IsAuthenticationReady, Is.True);
         }
 
         [Test]
@@ -127,6 +150,7 @@ namespace Shooter.Application.Tests
             Assert.That(session.StopCount, Is.EqualTo(1));
             Assert.That(session.StartCount, Is.EqualTo(2));
             Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.WaitingForPlayers));
+            Assert.That(coordinator.Current.Problem, Is.Empty);
         }
 
         [Test]

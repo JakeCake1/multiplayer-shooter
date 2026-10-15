@@ -13,7 +13,7 @@ namespace Shooter.Application
         private CancellationTokenSource _operation;
         private int _attempt;
         private bool _authenticated;
-        private bool _startingNetworkSession;
+        private bool _expectingNetworkTransition;
 
         public ClientFlowCoordinator(IAuthenticationService authenticationService, IMatchmakingService matchmakingService, INetworkSession networkSession, IApplicationQuitter applicationQuitter)
         {
@@ -28,15 +28,34 @@ namespace Shooter.Application
 
         public ClientFlowSnapshot Current { get; private set; } = new ClientFlowSnapshot(ClientFlowState.Booting);
 
-        public async Task InitializeAsync()
+        public Task InitializeAsync()
         {
             if (Current.State != ClientFlowState.Booting)
             {
-                return;
+                return Task.CompletedTask;
             }
 
+            return RunAuthenticationAsync(false);
+        }
+
+        public Task RetryAuthenticationAsync()
+        {
+            if (Current.State != ClientFlowState.Menu || _authenticated)
+            {
+                return Task.CompletedTask;
+            }
+
+            return RunAuthenticationAsync(true);
+        }
+
+        private async Task RunAuthenticationAsync(bool publishBooting)
+        {
             var context = BeginOperation();
-            _startingNetworkSession = true;
+            if (publishBooting)
+            {
+                Publish(new ClientFlowSnapshot(ClientFlowState.Booting));
+            }
+
             try
             {
                 await AuthenticateForMenuAsync(context);
@@ -75,7 +94,6 @@ namespace Shooter.Application
             }
             finally
             {
-                FinishNetworkStart(context.Attempt);
                 CompleteOperation(context.Source);
             }
         }
@@ -98,8 +116,7 @@ namespace Shooter.Application
             }
 
             CancelOperation();
-            _startingNetworkSession = false;
-            Publish(new ClientFlowSnapshot(ClientFlowState.Menu));
+            Publish(CreateMenuSnapshot());
         }
 
         public void Exit()
@@ -123,17 +140,12 @@ namespace Shooter.Application
             }
 
             _authenticated = result.Succeeded;
-            Publish(new ClientFlowSnapshot(ClientFlowState.Menu, result.Succeeded ? string.Empty : result.Problem));
+            Publish(CreateMenuSnapshot(result.Succeeded ? string.Empty : result.Problem));
         }
 
         private async Task FindAndConnectAsync(FlowOperationContext context)
         {
             await StopCompletedSessionAsync();
-            if (!await EnsureAuthenticatedAsync(context))
-            {
-                return;
-            }
-
             Publish(new ClientFlowSnapshot(ClientFlowState.Searching));
             var matchmakingResult = await _matchmakingService.FindMatchAsync(context.Token);
             if (!ApplyMatchmakingResult(context.Attempt, matchmakingResult))
@@ -142,29 +154,6 @@ namespace Shooter.Application
             }
 
             await ConnectAsync(context.Attempt, matchmakingResult.SessionRequest);
-        }
-
-        private async Task<bool> EnsureAuthenticatedAsync(FlowOperationContext context)
-        {
-            if (_authenticated)
-            {
-                return true;
-            }
-
-            Publish(new ClientFlowSnapshot(ClientFlowState.Booting));
-            var result = await _authenticationService.AuthenticateAsync(context.Token);
-            if (!IsCurrent(context.Attempt))
-            {
-                return false;
-            }
-
-            _authenticated = result.Succeeded;
-            if (!result.Succeeded)
-            {
-                Publish(new ClientFlowSnapshot(ClientFlowState.Menu, result.Problem));
-            }
-
-            return result.Succeeded;
         }
 
         private bool ApplyMatchmakingResult(int attempt, MatchmakingResult result)
@@ -176,7 +165,7 @@ namespace Shooter.Application
 
             if (!result.Succeeded)
             {
-                Publish(new ClientFlowSnapshot(ClientFlowState.Menu, result.Problem));
+                Publish(CreateMenuSnapshot(result.Problem));
                 return false;
             }
 
@@ -186,31 +175,47 @@ namespace Shooter.Application
 
         private async Task ConnectAsync(int attempt, NetworkSessionStartRequest request)
         {
-            var result = await _networkSession.StartAsync(request);
-            if (IsCurrent(attempt))
+            _expectingNetworkTransition = true;
+            try
             {
-                Publish(result.Succeeded ? new ClientFlowSnapshot(ClientFlowState.WaitingForPlayers) : new ClientFlowSnapshot(ClientFlowState.Menu, BuildProblem(result)));
+                var result = await _networkSession.StartAsync(request);
+                if (IsCurrent(attempt))
+                {
+                    Publish(result.Succeeded ? new ClientFlowSnapshot(ClientFlowState.WaitingForPlayers) : CreateMenuSnapshot(BuildProblem(result)));
+                }
+            }
+            finally
+            {
+                _expectingNetworkTransition = false;
             }
         }
 
         private bool CanFindGame()
         {
-            return Current.State == ClientFlowState.Menu || Current.State == ClientFlowState.Results;
+            return _authenticated && (Current.State == ClientFlowState.Menu || Current.State == ClientFlowState.Results);
         }
 
         private async Task StopCompletedSessionAsync()
         {
             if (_networkSession.State != NetworkSessionState.Disconnected)
             {
-                await _networkSession.StopAsync();
+                _expectingNetworkTransition = true;
+                try
+                {
+                    await _networkSession.StopAsync();
+                }
+                finally
+                {
+                    _expectingNetworkTransition = false;
+                }
             }
         }
 
         private void HandleNetworkSessionStateChanged(NetworkSessionState state)
         {
-            if (state == NetworkSessionState.Disconnected && !_startingNetworkSession && Current.State != ClientFlowState.Menu && Current.State != ClientFlowState.Booting)
+            if (state == NetworkSessionState.Disconnected && !_expectingNetworkTransition && Current.State != ClientFlowState.Menu && Current.State != ClientFlowState.Booting)
             {
-                Publish(new ClientFlowSnapshot(ClientFlowState.Menu, "Disconnected from the match server."));
+                Publish(CreateMenuSnapshot("Disconnected from the match server."));
             }
         }
 
@@ -245,20 +250,17 @@ namespace Shooter.Application
             return attempt == _attempt;
         }
 
-        private void FinishNetworkStart(int attempt)
-        {
-            if (IsCurrent(attempt))
-            {
-                _startingNetworkSession = false;
-            }
-        }
-
         private void PublishUnexpectedFailure(int attempt, string stage, Exception exception)
         {
             if (IsCurrent(attempt))
             {
-                Publish(new ClientFlowSnapshot(ClientFlowState.Menu, $"{stage} unexpected failure: {exception.Message}"));
+                Publish(CreateMenuSnapshot($"{stage} unexpected failure: {exception.Message}"));
             }
+        }
+
+        private ClientFlowSnapshot CreateMenuSnapshot(string problem = "")
+        {
+            return new ClientFlowSnapshot(ClientFlowState.Menu, problem, isAuthenticationReady: _authenticated);
         }
 
         private void Publish(ClientFlowSnapshot snapshot)

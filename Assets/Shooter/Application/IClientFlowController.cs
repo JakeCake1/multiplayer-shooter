@@ -11,6 +11,8 @@ namespace Shooter.Application
 
         Task InitializeAsync();
 
+        Task RetryAuthenticationAsync();
+
         Task FindGameAsync();
 
         void CancelSearch();
