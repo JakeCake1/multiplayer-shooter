@@ -38,9 +38,29 @@ namespace Shooter.Infrastructure.Fusion
 
             var connectedPlayerCount = CountConnectedPlayers();
             var previousPhase = _stateMachine.Phase;
+            _resultPublisher.CaptureScores(Runner);
             _stateMachine.Advance(connectedPlayerCount, Runner.DeltaTime);
             PublishResultIfReady();
             PublishStateIfPhaseChanged(previousPhase, connectedPlayerCount);
+        }
+
+        public void HandlePlayerLeft(PlayerRef player, NetworkObject playerObject)
+        {
+            if (_stateMachine == null || _stateMachine.Phase != MatchPhase.Playing)
+            {
+                return;
+            }
+
+            if (!_resultPublisher.TryPublishForfeit(Runner, _resultState, player, playerObject))
+            {
+                Debug.LogError($"[MatchResult][Server] Could not publish forfeit result for Player {player.PlayerId}.");
+            }
+
+            if (_stateMachine.TryBeginFinishing())
+            {
+                PublishState(CountConnectedPlayersExcluding(player));
+                ReportFinishedMatchIfNeeded();
+            }
         }
 
         private void PublishResultIfReady()
@@ -85,6 +105,20 @@ namespace Shooter.Infrastructure.Fusion
             foreach (var _ in Runner.ActivePlayers)
             {
                 count++;
+            }
+
+            return count;
+        }
+
+        private int CountConnectedPlayersExcluding(PlayerRef excludedPlayer)
+        {
+            var count = 0;
+            foreach (var player in Runner.ActivePlayers)
+            {
+                if (player != excludedPlayer)
+                {
+                    count++;
+                }
             }
 
             return count;

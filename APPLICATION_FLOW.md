@@ -343,8 +343,8 @@ and phase timer.
 The current local-development tuning is provisional and configurable on
 `ServerLifetimeScope`: two required players, a three-second countdown, a 60-second match,
 and a one-second finishing phase. If a player leaves during countdown, the server returns
-to `WaitingForPlayers`. Opponent disconnect semantics after `Playing` starts remain deferred
-until the combat/results slice.
+to `WaitingForPlayers`. If a player leaves after `Playing` starts, the server snapshots both
+scores, awards the match to the connected opponent by forfeit, and enters `Finishing`.
 
 ### Current Local Client-Presentation Slice
 

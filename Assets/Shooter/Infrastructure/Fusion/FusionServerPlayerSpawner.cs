@@ -38,6 +38,7 @@ namespace Shooter.Infrastructure.Fusion
         {
             if (Runner.IsServer && Runner.TryGetPlayerObject(player, out var playerObject))
             {
+                _matchController.HandlePlayerLeft(player, playerObject);
                 Runner.Despawn(playerObject);
             }
         }

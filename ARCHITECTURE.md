@@ -170,7 +170,7 @@ The player adapter sends camera-relative planar movement, jump, fire, and saniti
 
 `FusionPlayerScoreState` stores each player's replicated kill count. `FusionServerWeapon` awards a kill only when its server-confirmed damage changes a living opponent to dead; the pure `PlayerScoreRules` feature owns the score increment rule. Clients only observe the replicated score.
 
-When the authoritative match leaves `Playing`, `FusionServerMatchResultPublisher` snapshots both replicated player scores, resolves the winner through pure `MatchResultRules`, and publishes the immutable result through `FusionMatchResultState` on the match-state network object. Client result presentation reads this snapshot rather than depending on player objects remaining spawned.
+When the authoritative match leaves `Playing`, `FusionServerMatchResultPublisher` snapshots both replicated player scores, resolves the winner through pure `MatchResultRules`, and publishes the immutable result through `FusionMatchResultState` on the match-state network object. It continuously retains the two authoritative scores so a disconnect cannot erase the departing player's result data. A player leaving during `Playing` forfeits to the connected opponent and moves the match into `Finishing`; leaving during the countdown still returns the match to `WaitingForPlayers`. Client result presentation reads the immutable snapshot rather than depending on player objects remaining spawned.
 
 Fusion `NetworkBehaviour` implementations live under `Infrastructure/Fusion/NetworkBehaviours/<FeatureName>` while remaining inside `Shooter.Infrastructure.Fusion`. This keeps network-facing components discoverable without creating an assembly per adapter.
 

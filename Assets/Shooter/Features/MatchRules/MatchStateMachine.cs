@@ -15,6 +15,18 @@ namespace Shooter.Features.MatchRules
 
         public float SecondsRemaining { get; private set; }
 
+        public bool TryBeginFinishing()
+        {
+            if (Phase != MatchPhase.Playing)
+            {
+                return false;
+            }
+
+            Enter(MatchPhase.Finishing, _rules.FinishingSeconds);
+            CompleteZeroDurationPhases();
+            return true;
+        }
+
         public void Advance(int connectedPlayerCount, float deltaSeconds)
         {
             if (connectedPlayerCount < 0)
