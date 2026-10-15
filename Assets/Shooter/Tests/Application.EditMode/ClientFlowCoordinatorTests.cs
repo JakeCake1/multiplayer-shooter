@@ -127,6 +127,30 @@ namespace Shooter.Application.Tests
         }
 
         [Test]
+        public async Task ConnectionTimeoutStopsPendingSessionAndReturnsToMenu()
+        {
+            var session = new FakeNetworkSession { WaitForStartCompletion = true };
+            var timeoutPolicy = new ClientFlowTimeoutPolicy(TimeSpan.FromSeconds(1d), TimeSpan.FromMilliseconds(1d));
+            var coordinator = CreateCoordinator(session, timeoutPolicy: timeoutPolicy);
+            await coordinator.InitializeAsync();
+
+            await coordinator.FindGameAsync();
+
+            Assert.That(session.StartCount, Is.EqualTo(1));
+            Assert.That(session.StopCount, Is.EqualTo(1));
+            Assert.That(session.State, Is.EqualTo(NetworkSessionState.Disconnected));
+            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
+            Assert.That(coordinator.Current.Problem, Does.Contain("connection timed out"));
+            Assert.That(coordinator.Current.CanFindGame, Is.True);
+
+            session.CompleteStart();
+            await Task.Yield();
+
+            Assert.That(session.State, Is.EqualTo(NetworkSessionState.Disconnected));
+            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
+        }
+
+        [Test]
         public async Task AuthoritativeSnapshotsDrivePlayingAndResults()
         {
             var coordinator = CreateCoordinator(new FakeNetworkSession());

@@ -11,6 +11,7 @@ namespace Shooter.Infrastructure.Fusion
     public abstract class FusionNetworkSessionBase : INetworkSession, IDisposable
     {
         private NetworkRunner _runner;
+        private int _operationVersion;
 
         public event Action<NetworkSessionState> StateChanged;
 
@@ -21,15 +22,16 @@ namespace Shooter.Infrastructure.Fusion
         public async Task<NetworkSessionStartResult> StartAsync(NetworkSessionStartRequest request)
         {
             ValidateStartRequest(request);
+            var operationVersion = ++_operationVersion;
             SetState(NetworkSessionState.Starting);
 
             try
             {
-                return await StartValidatedAsync(request);
+                return await StartValidatedAsync(request, operationVersion);
             }
             catch (Exception exception)
             {
-                return await HandleUnexpectedFailureAsync(exception);
+                return IsCurrentOperation(operationVersion) ? await HandleUnexpectedFailureAsync(exception) : CreateSupersededStartResult();
             }
         }
 
@@ -40,6 +42,7 @@ namespace Shooter.Infrastructure.Fusion
                 return;
             }
 
+            _operationVersion++;
             SetState(NetworkSessionState.Stopping);
             await DestroyRunnerAsync();
             SetState(NetworkSessionState.Disconnected);
@@ -47,6 +50,7 @@ namespace Shooter.Infrastructure.Fusion
 
         public void Dispose()
         {
+            _operationVersion++;
             DestroyRunnerImmediately();
             SetState(NetworkSessionState.Disconnected);
         }
@@ -70,7 +74,7 @@ namespace Shooter.Infrastructure.Fusion
             return runner;
         }
 
-        private async Task<NetworkSessionStartResult> StartValidatedAsync(NetworkSessionStartRequest request)
+        private async Task<NetworkSessionStartResult> StartValidatedAsync(NetworkSessionStartRequest request, int operationVersion)
         {
             if (!TryValidatePhotonConfiguration(out var configurationError))
             {
@@ -79,9 +83,29 @@ namespace Shooter.Infrastructure.Fusion
 
             LogStart(request);
             await PrepareAsync();
+            if (!IsCurrentOperation(operationVersion))
+            {
+                return CreateSupersededStartResult();
+            }
+
             _runner = CreateRunner();
             var result = await _runner.StartGame(CreateStartGameArgs(request, _runner));
+            if (!IsCurrentOperation(operationVersion))
+            {
+                return CreateSupersededStartResult();
+            }
+
             return result.Ok ? HandleStartSuccess() : await HandleStartFailureAsync(request, result);
+        }
+
+        private bool IsCurrentOperation(int operationVersion)
+        {
+            return operationVersion == _operationVersion;
+        }
+
+        private static NetworkSessionStartResult CreateSupersededStartResult()
+        {
+            return NetworkSessionStartResult.Failure(NetworkSessionError.ConnectionFailed, "The network session start was superseded by cleanup.");
         }
 
         private void ValidateStartRequest(NetworkSessionStartRequest request)

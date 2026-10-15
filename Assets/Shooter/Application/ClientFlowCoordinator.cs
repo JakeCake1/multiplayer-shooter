@@ -160,7 +160,7 @@ namespace Shooter.Application
                 return;
             }
 
-            await ConnectAsync(context.Attempt, matchmakingResult.SessionRequest);
+            await ConnectAsync(context, matchmakingResult.SessionRequest);
         }
 
         private bool ApplyMatchmakingResult(int attempt, MatchmakingResult result)
@@ -180,20 +180,63 @@ namespace Shooter.Application
             return true;
         }
 
-        private async Task ConnectAsync(int attempt, NetworkSessionStartRequest request)
+        private async Task ConnectAsync(FlowOperationContext context, NetworkSessionStartRequest request)
         {
             _expectingNetworkTransition = true;
             try
             {
-                var result = await _networkSession.StartAsync(request);
-                if (IsCurrent(attempt))
-                {
-                    Publish(result.Succeeded ? new ClientFlowSnapshot(ClientFlowState.WaitingForPlayers) : CreateMenuSnapshot(BuildProblem(result)));
-                }
+                await ConnectWithinTimeoutAsync(context, request);
             }
             finally
             {
-                _expectingNetworkTransition = false;
+                if (!_networkCleanupPending)
+                {
+                    _expectingNetworkTransition = false;
+                }
+            }
+        }
+
+        private async Task ConnectWithinTimeoutAsync(FlowOperationContext context, NetworkSessionStartRequest request)
+        {
+            var startTask = _networkSession.StartAsync(request);
+            var timeoutTask = Task.Delay(_timeoutPolicy.ConnectionStartTimeout, context.Token);
+            var completedTask = await Task.WhenAny(startTask, timeoutTask);
+            if (completedTask == startTask)
+            {
+                ApplyConnectionResult(context.Attempt, await startTask);
+                return;
+            }
+
+            context.Token.ThrowIfCancellationRequested();
+            await HandleConnectionTimeoutAsync(context, startTask);
+        }
+
+        private void ApplyConnectionResult(int attempt, NetworkSessionStartResult result)
+        {
+            if (IsCurrent(attempt))
+            {
+                Publish(result.Succeeded ? new ClientFlowSnapshot(ClientFlowState.WaitingForPlayers) : CreateMenuSnapshot(BuildProblem(result)));
+            }
+        }
+
+        private async Task HandleConnectionTimeoutAsync(FlowOperationContext context, Task<NetworkSessionStartResult> startTask)
+        {
+            _ = ObserveNetworkStartCompletionAsync(startTask);
+            var cleanupCompleted = await StopCompletedSessionAsync(context);
+            if (cleanupCompleted && IsCurrent(context.Attempt))
+            {
+                Publish(CreateMenuSnapshot($"Network connection timed out after {_timeoutPolicy.ConnectionStartTimeout.TotalSeconds:0.#} seconds."));
+            }
+        }
+
+        private static async Task ObserveNetworkStartCompletionAsync(Task<NetworkSessionStartResult> startTask)
+        {
+            try
+            {
+                await startTask;
+            }
+            catch
+            {
             }
         }
 

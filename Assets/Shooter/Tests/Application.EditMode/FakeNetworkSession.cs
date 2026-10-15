@@ -7,6 +7,9 @@ namespace Shooter.Application.Tests
     public sealed class FakeNetworkSession : INetworkSession
     {
         private TaskCompletionSource<bool> _stopCompletion;
+        private TaskCompletionSource<NetworkSessionStartResult> _startCompletion;
+        private int _sessionGeneration;
+        private int _pendingStartGeneration;
 
         public event Action<NetworkSessionState> StateChanged;
 
@@ -20,6 +23,8 @@ namespace Shooter.Application.Tests
 
         public bool WaitForStopCompletion { get; set; }
 
+        public bool WaitForStartCompletion { get; set; }
+
         public Exception StopException { get; set; }
 
         public NetworkSessionStartRequest LastRequest { get; private set; }
@@ -28,6 +33,14 @@ namespace Shooter.Application.Tests
         {
             StartCount++;
             LastRequest = request;
+            _pendingStartGeneration = ++_sessionGeneration;
+            if (WaitForStartCompletion)
+            {
+                SetState(NetworkSessionState.Starting);
+                _startCompletion = new TaskCompletionSource<NetworkSessionStartResult>();
+                return _startCompletion.Task;
+            }
+
             SetState(StartResult.Succeeded ? NetworkSessionState.Connected : NetworkSessionState.Disconnected);
             return Task.FromResult(StartResult);
         }
@@ -35,6 +48,7 @@ namespace Shooter.Application.Tests
         public Task StopAsync()
         {
             StopCount++;
+            _sessionGeneration++;
             if (StopException != null)
             {
                 throw StopException;
@@ -54,6 +68,16 @@ namespace Shooter.Application.Tests
         {
             SetState(NetworkSessionState.Disconnected);
             _stopCompletion?.TrySetResult(true);
+        }
+
+        public void CompleteStart()
+        {
+            if (_pendingStartGeneration == _sessionGeneration)
+            {
+                SetState(StartResult.Succeeded ? NetworkSessionState.Connected : NetworkSessionState.Disconnected);
+            }
+
+            _startCompletion?.TrySetResult(StartResult);
         }
 
         private void SetState(NetworkSessionState state)
