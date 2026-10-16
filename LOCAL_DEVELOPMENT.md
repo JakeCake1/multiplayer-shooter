@@ -116,6 +116,28 @@ WaitingForPlayers -> Starting -> Playing -> Finishing -> Finished
 
 Phase transitions are written to server and client logs with a `[Match]` prefix. The current local tuning is two required players, a three-second countdown, a 60-second match, and a one-second finishing phase.
 
+## Validate
+
+To scan all three logs for startup failures and critical runtime exceptions, run:
+
+```powershell
+.\ValidateLocalMatch.ps1
+```
+
+After finishing one match, require a complete `Playing -> Finished` lifecycle and a server-authored result:
+
+```powershell
+.\ValidateLocalMatch.ps1 -RequireCompletedMatch
+```
+
+After using `Find Game Again` on both clients and finishing the second match, validate local server reuse as well:
+
+```powershell
+.\ValidateLocalMatch.ps1 -RequireRepeatedMatch
+```
+
+The repeated-match check requires two complete lifecycles in every process log and the server message `[Match][Server] Prepared the local session for the next match.`. The script exits with an error when a required stage is missing or a known critical connection/runtime error is present.
+
 All three processes must use the same Photon Fusion AppId and region configuration. The local UDP port is bound by the dedicated server; Fusion clients join the named session through Photon Cloud.
 
 ## Stop
