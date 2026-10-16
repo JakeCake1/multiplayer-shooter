@@ -1,8 +1,5 @@
-using System.IO;
-using UnityEngine;
 using UnityEditor;
 using UnityEditor.Build;
-using UnityEditor.Build.Reporting;
 
 namespace Shooter.Bootstrap.Editor
 {
@@ -11,14 +8,14 @@ namespace Shooter.Bootstrap.Editor
         [MenuItem("Shooter/Local Development/Build Development Client")]
         public static void BuildClient()
         {
-            PrepareBuildInputs();
+            UnityPlayerBuildPipeline.PrepareBuildInputs();
             Build(LocalBuildLayout.ClientScenePath, LocalBuildLayout.ClientBuildPath, StandaloneBuildSubtarget.Player, cleanBuildCache: false);
         }
 
         [MenuItem("Shooter/Local Development/Build Development Dedicated Server")]
         public static void BuildServer()
         {
-            PrepareBuildInputs();
+            UnityPlayerBuildPipeline.PrepareBuildInputs();
             Build(LocalBuildLayout.ServerScenePath, LocalBuildLayout.ServerBuildPath, StandaloneBuildSubtarget.Server, cleanBuildCache: false);
         }
 
@@ -48,64 +45,20 @@ namespace Shooter.Bootstrap.Editor
 
         private static void BuildAll(bool cleanBuildCache)
         {
-            PrepareBuildInputs();
+            UnityPlayerBuildPipeline.PrepareBuildInputs();
             Build(LocalBuildLayout.ClientScenePath, LocalBuildLayout.ClientBuildPath, StandaloneBuildSubtarget.Player, cleanBuildCache);
             Build(LocalBuildLayout.ServerScenePath, LocalBuildLayout.ServerBuildPath, StandaloneBuildSubtarget.Server, cleanBuildCache);
         }
 
-        private static void PrepareBuildInputs()
-        {
-            LocalBootstrapSceneGenerator.CreateBootstrapScenesIfMissing();
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            EditorUtility.UnloadUnusedAssetsImmediate();
-        }
-
         private static void Build(string scenePath, string outputPath, StandaloneBuildSubtarget subtarget, bool cleanBuildCache)
         {
-            if (!File.Exists(scenePath))
-            {
-                throw new BuildFailedException($"Required scene does not exist: {scenePath}");
-            }
-
-            Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
-
             var options = BuildOptions.Development | BuildOptions.AllowDebugging;
             if (cleanBuildCache)
             {
                 options |= BuildOptions.CleanBuildCache;
             }
 
-            var buildOptions = new BuildPlayerOptions { scenes = new[] { scenePath }, locationPathName = outputPath, target = BuildTarget.StandaloneWindows64, subtarget = (int)subtarget, options = options };
-            Debug.Log($"[LocalBuild] Starting {subtarget} build at '{outputPath}'. Clean build cache: {cleanBuildCache}.");
-            var previousHttpOption = ConfigureHttpPolicy(subtarget);
-            BuildReport report;
-            try
-            {
-                report = BuildPipeline.BuildPlayer(buildOptions);
-            }
-            finally
-            {
-                PlayerSettings.insecureHttpOption = previousHttpOption;
-                EditorUtility.ClearProgressBar();
-            }
-
-            if (report.summary.result != BuildResult.Succeeded)
-            {
-                throw new BuildFailedException($"{subtarget} build failed with result {report.summary.result}.");
-            }
-
-            Debug.Log($"[LocalBuild] Finished {subtarget} build in {report.summary.totalTime.TotalSeconds:F1}s at '{outputPath}'.");
-        }
-
-        private static InsecureHttpOption ConfigureHttpPolicy(StandaloneBuildSubtarget subtarget)
-        {
-            var previousOption = PlayerSettings.insecureHttpOption;
-            if (subtarget == StandaloneBuildSubtarget.Server)
-            {
-                PlayerSettings.insecureHttpOption = InsecureHttpOption.AlwaysAllowed;
-            }
-
-            return previousOption;
+            UnityPlayerBuildPipeline.Build(scenePath, outputPath, subtarget, options, "LocalBuild");
         }
     }
 }
