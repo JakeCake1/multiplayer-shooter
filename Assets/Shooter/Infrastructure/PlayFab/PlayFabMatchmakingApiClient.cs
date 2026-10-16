@@ -1,14 +1,18 @@
 using System;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
 
 namespace Shooter.Infrastructure.PlayFab
 {
     public sealed class PlayFabMatchmakingApiClient : IDisposable
     {
+        private const int MaximumRateLimitRetryAttempts = 3;
+        private const double DefaultRateLimitRetrySeconds = 5;
         private readonly IPlayFabPlayerSession _playerSession;
         private readonly PlayFabClientOptions _clientOptions;
         private readonly PlayFabMatchmakingOptions _matchmakingOptions;
@@ -70,21 +74,96 @@ namespace Shooter.Infrastructure.PlayFab
         {
             ThrowIfDisposed();
             var entityToken = await GetEntityTokenAsync();
+            for (var retryAttempt = 0; ; retryAttempt++)
+            {
+                using (var response = await SendRequestAsync(path, payload, entityToken, cancellationToken))
+                {
+                    var responseJson = await response.Content.ReadAsStringAsync();
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return JObject.Parse(responseJson);
+                    }
+
+                    if (!TryGetRateLimitRetryDelay(response, responseJson, retryAttempt, out var retryDelay))
+                    {
+                        throw CreateRequestFailure(path, response, responseJson);
+                    }
+
+                    LogRateLimitRetry(path, retryDelay, retryAttempt);
+                    await Task.Delay(retryDelay, cancellationToken);
+                }
+            }
+        }
+
+        private async Task<HttpResponseMessage> SendRequestAsync(string path, JObject payload, string entityToken, CancellationToken cancellationToken)
+        {
             using (var request = new HttpRequestMessage(HttpMethod.Post, $"{_clientOptions.ApiEndpoint}{path}"))
             {
                 request.Headers.TryAddWithoutValidation("X-EntityToken", entityToken);
                 request.Content = new StringContent(payload.ToString(), Encoding.UTF8, "application/json");
-                using (var response = await _httpClient.SendAsync(request, cancellationToken))
-                {
-                    var responseJson = await response.Content.ReadAsStringAsync();
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        throw new InvalidOperationException($"PlayFab request '{path}' failed (HTTP {(int)response.StatusCode}): {responseJson}");
-                    }
+                return await _httpClient.SendAsync(request, cancellationToken);
+            }
+        }
 
-                    return JObject.Parse(responseJson);
+        private static bool TryGetRateLimitRetryDelay(HttpResponseMessage response, string responseJson, int retryAttempt, out TimeSpan retryDelay)
+        {
+            retryDelay = TimeSpan.Zero;
+            if (response.StatusCode != HttpStatusCode.TooManyRequests || retryAttempt >= MaximumRateLimitRetryAttempts)
+            {
+                return false;
+            }
+
+            retryDelay = GetRateLimitRetryDelay(response, responseJson);
+            return true;
+        }
+
+        private static TimeSpan GetRateLimitRetryDelay(HttpResponseMessage response, string responseJson)
+        {
+            if (TryGetBodyRetryAfterSeconds(responseJson, out var bodyRetryAfterSeconds))
+            {
+                return TimeSpan.FromSeconds(bodyRetryAfterSeconds);
+            }
+
+            if (response.Headers.RetryAfter?.Delta is TimeSpan headerDelay && headerDelay > TimeSpan.Zero)
+            {
+                return headerDelay;
+            }
+
+            if (response.Headers.RetryAfter?.Date is DateTimeOffset retryDate)
+            {
+                var dateDelay = retryDate - DateTimeOffset.UtcNow;
+                if (dateDelay > TimeSpan.Zero)
+                {
+                    return dateDelay;
                 }
             }
+
+            return TimeSpan.FromSeconds(DefaultRateLimitRetrySeconds);
+        }
+
+        private static bool TryGetBodyRetryAfterSeconds(string responseJson, out double retryAfterSeconds)
+        {
+            retryAfterSeconds = 0;
+            try
+            {
+                var retryAfterToken = JObject.Parse(responseJson)["retryAfterSeconds"];
+                retryAfterSeconds = retryAfterToken?.Value<double>() ?? 0;
+                return retryAfterSeconds > 0;
+            }
+            catch (Newtonsoft.Json.JsonException)
+            {
+                return false;
+            }
+        }
+
+        private static InvalidOperationException CreateRequestFailure(string path, HttpResponseMessage response, string responseJson)
+        {
+            return new InvalidOperationException($"PlayFab request '{path}' failed (HTTP {(int)response.StatusCode}): {responseJson}");
+        }
+
+        private static void LogRateLimitRetry(string path, TimeSpan retryDelay, int retryAttempt)
+        {
+            Debug.LogWarning($"[PlayFab][Matchmaking] Request '{path}' was rate limited. Retrying in {retryDelay.TotalSeconds:0.###} seconds ({retryAttempt + 1}/{MaximumRateLimitRetryAttempts}).");
         }
 
         private async Task<string> GetEntityTokenAsync()
