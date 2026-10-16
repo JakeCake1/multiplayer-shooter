@@ -12,6 +12,11 @@ namespace Shooter.Infrastructure.Fusion
         private static readonly MatchResultRules Rules = new MatchResultRules();
         private readonly Dictionary<int, int> _scoresByPlayerId = new Dictionary<int, int>(RequiredResultPlayerCount);
 
+        public void Reset()
+        {
+            _scoresByPlayerId.Clear();
+        }
+
         public bool TryPublish(NetworkRunner runner, FusionMatchResultState resultState)
         {
             if (runner == null)

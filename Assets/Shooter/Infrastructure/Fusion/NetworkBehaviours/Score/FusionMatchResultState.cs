@@ -38,6 +38,18 @@ namespace Shooter.Infrastructure.Fusion
             HasResult = true;
         }
 
+        public void ClearResult()
+        {
+            EnsureStateAuthority();
+            HasResult = false;
+            IsDraw = false;
+            FirstPlayerId = 0;
+            FirstPlayerKills = 0;
+            SecondPlayerId = 0;
+            SecondPlayerKills = 0;
+            WinnerPlayerId = 0;
+        }
+
         private void EnsureStateAuthority()
         {
             if (!Object.HasStateAuthority)

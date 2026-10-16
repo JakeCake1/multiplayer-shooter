@@ -15,6 +15,11 @@ namespace Shooter.Features.MatchRules
 
         public float SecondsRemaining { get; private set; }
 
+        public void Reset()
+        {
+            Enter(MatchPhase.WaitingForPlayers, 0f);
+        }
+
         public bool TryBeginFinishing()
         {
             if (Phase != MatchPhase.Playing)
