@@ -7,6 +7,7 @@ namespace Shooter.Infrastructure.PlayFab
     {
         private void Update()
         {
+            PlayFabMultiplayer.ProcessLobbyStateChanges();
             PlayFabMultiplayer.ProcessMatchmakingStateChanges();
         }
     }
