@@ -33,12 +33,12 @@ namespace Shooter.Infrastructure.PlayFab
 
             if (_activeCompletion != null)
             {
-                return MatchmakingResult.Failure("A PlayFab matchmaking request is already active.");
+                return CreateFailureResult("A PlayFab matchmaking request is already active.");
             }
 
             if (_playerSession.PlayerEntity == null)
             {
-                return MatchmakingResult.Failure("PlayFab matchmaking requires an authenticated player.");
+                return CreateFailureResult("PlayFab matchmaking requires an authenticated player.");
             }
 
             try
@@ -53,7 +53,7 @@ namespace Shooter.Infrastructure.PlayFab
             catch (Exception exception)
             {
                 ClearActiveRequest();
-                return MatchmakingResult.Failure($"PlayFab failed to start matchmaking: {exception.Message}");
+                return CreateFailureResult($"PlayFab failed to start matchmaking: {exception.Message}", exception);
             }
 
             Debug.Log($"[PlayFab] Matchmaking ticket requested for queue '{_options.QueueName}'.");
@@ -130,12 +130,12 @@ namespace Shooter.Infrastructure.PlayFab
         {
             if (result != 0)
             {
-                return MatchmakingResult.Failure($"PlayFab matchmaking failed (HRESULT 0x{result:X8}, status {ticket.Status}).");
+                return CreateFailureResult($"PlayFab matchmaking failed (HRESULT 0x{result:X8}, status {ticket.Status}).");
             }
 
             if (ticket.Status != MatchmakingTicketStatus.Matched)
             {
-                return MatchmakingResult.Failure($"PlayFab matchmaking completed with status {ticket.Status}.");
+                return CreateFailureResult($"PlayFab matchmaking completed with status {ticket.Status}.");
             }
 
             return CreateMatchedResult(ticket.GetMatchDetails());
@@ -145,12 +145,12 @@ namespace Shooter.Infrastructure.PlayFab
         {
             if (details == null || string.IsNullOrWhiteSpace(details.MatchId))
             {
-                return MatchmakingResult.Failure("PlayFab returned a match without a MatchId.");
+                return CreateFailureResult("PlayFab returned a match without a MatchId.");
             }
 
             if (details.ServerDetails == null)
             {
-                return MatchmakingResult.Failure("PlayFab found a match but did not allocate a multiplayer server. Enable server allocation for the queue.");
+                return CreateFailureResult("PlayFab found a match but did not allocate a multiplayer server. Enable server allocation for the queue.");
             }
 
             LogAllocatedServer(details);
@@ -198,7 +198,7 @@ namespace Shooter.Infrastructure.PlayFab
 
             var ticket = _activeTicket;
             var timeoutSeconds = _options.CompletionWatchdogTimeout.TotalSeconds;
-            var result = MatchmakingResult.Failure($"PlayFab matchmaking timed out after {timeoutSeconds:0} seconds.");
+            var result = CreateFailureResult($"PlayFab matchmaking timed out after {timeoutSeconds:0} seconds.");
             if (!completion.TrySetResult(result))
             {
                 return completion.Task.GetAwaiter().GetResult();
@@ -208,6 +208,20 @@ namespace Shooter.Infrastructure.PlayFab
             ticket?.Cancel();
             Debug.LogWarning($"[PlayFab] Matchmaking completion watchdog expired after {timeoutSeconds:0} seconds; the active ticket was cancelled.");
             return result;
+        }
+
+        private static MatchmakingResult CreateFailureResult(string message, Exception exception = null)
+        {
+            if (exception == null)
+            {
+                Debug.LogError($"[PlayFab][Matchmaking] {message}");
+            }
+            else
+            {
+                Debug.LogError($"[PlayFab][Matchmaking] {message}\n{exception}");
+            }
+
+            return MatchmakingResult.Failure(message);
         }
 
         private void ClearActiveRequest()
