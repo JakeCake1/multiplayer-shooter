@@ -10,6 +10,7 @@ namespace Shooter.Infrastructure.PlayFab
         private readonly PlayFabClientOptions _options;
         private GameObject _eventPumpObject;
         private bool _ownsInitialization;
+        private bool _hasPreparedRequest;
         private bool _disposed;
 
         public PlayFabMultiplayerRuntime(PlayFabClientOptions options)
@@ -17,11 +18,13 @@ namespace Shooter.Infrastructure.PlayFab
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
-        public void EnsureInitialized()
+        public void PrepareForMatchmakingRequest()
         {
             ThrowIfDisposed();
+            RestartOwnedSdkAfterPreviousRequest();
             InitializeSdk();
             CreateEventPump();
+            _hasPreparedRequest = true;
         }
 
         public void Dispose()
@@ -45,6 +48,17 @@ namespace Shooter.Infrastructure.PlayFab
 
             PlayFabMultiplayer.Initialize(_options.TitleId);
             _ownsInitialization = true;
+        }
+
+        private void RestartOwnedSdkAfterPreviousRequest()
+        {
+            if (!_hasPreparedRequest || !_ownsInitialization)
+            {
+                return;
+            }
+
+            UninitializeSdk();
+            Debug.Log("[PlayFab][Matchmaking] Multiplayer runtime reset before creating a subsequent ticket.");
         }
 
         private void CreateEventPump()

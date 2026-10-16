@@ -81,7 +81,7 @@ namespace Shooter.Infrastructure.PlayFab
 
         private void StartMatchmakingRequest(string attributes)
         {
-            _runtime.EnsureInitialized();
+            _runtime.PrepareForMatchmakingRequest();
             _activeCompletion = new TaskCompletionSource<MatchmakingResult>(TaskCreationOptions.RunContinuationsAsynchronously);
             _activeTicket = CreateTicket(attributes);
             if (_activeTicket == null)
