@@ -1,5 +1,4 @@
 using System;
-using Shooter.Application;
 using Shooter.Features.MatchRules;
 using Shooter.Infrastructure.Fusion;
 using UnityEngine;
@@ -14,6 +13,12 @@ namespace Shooter.Bootstrap.Client
         private FusionMatchState _matchState;
         private bool _shutdownScheduled;
         private float _shutdownAt;
+        private float _shutdownGraceSeconds;
+
+        public void Configure(float shutdownGraceSeconds)
+        {
+            _shutdownGraceSeconds = shutdownGraceSeconds >= 0f ? shutdownGraceSeconds : throw new ArgumentOutOfRangeException(nameof(shutdownGraceSeconds));
+        }
 
         private void Awake()
         {
@@ -57,7 +62,7 @@ namespace Shooter.Bootstrap.Client
             }
 
             _shutdownScheduled = true;
-            _shutdownAt = Time.realtimeSinceStartup + ServerProcessShutdownPolicy.DefaultMatchFinishedGracePeriodSeconds;
+            _shutdownAt = Time.realtimeSinceStartup + _shutdownGraceSeconds;
         }
     }
 }

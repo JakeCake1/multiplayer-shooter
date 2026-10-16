@@ -15,13 +15,14 @@ namespace Shooter.Infrastructure.Fusion
         private FusionMatchState _replicatedState;
         private FusionMatchResultState _resultState;
         private readonly HashSet<PlayerRef> _roundPlayers = new HashSet<PlayerRef>();
-        private readonly FusionServerMatchResultPublisher _resultPublisher = new FusionServerMatchResultPublisher();
+        private FusionServerMatchResultPublisher _resultPublisher;
         private bool _reuseFinishedMatches;
 
         public void Configure(MatchRules rules, IServerMatchLifecycle matchLifecycle, bool reuseFinishedMatches)
         {
             _rules = rules ?? throw new ArgumentNullException(nameof(rules));
             _matchLifecycle = matchLifecycle ?? throw new ArgumentNullException(nameof(matchLifecycle));
+            _resultPublisher = new FusionServerMatchResultPublisher(_rules.RequiredPlayerCount);
             _reuseFinishedMatches = reuseFinishedMatches;
         }
 

@@ -220,6 +220,8 @@ Dedicated server must not initialize client-only systems such as camera, HUD, au
 
 The client and server bootstrap scenes are the only scenes kept in Build Settings. Runtime scenes and content prefabs use Addressables. Local builds rebuild Addressables content with the player build so client and dedicated-server outputs receive the same network prefab catalog.
 
+Match tuning has one source of truth: the Addressable `Assets/Shooter/Configuration/MatchConfiguration.json`. `AddressableMatchConfigurationService` loads and validates it before either role creates a Fusion runner, then the immutable `MatchConfiguration` is registered in the role composition root. Bootstrap and application services consume it through constructor injection. Fusion `NetworkBehaviour` adapters resolve the same already-loaded object from a runner-local `FusionMatchConfigurationSource`, avoiding a global service locator and keeping the dedicated-server and client values identical. PlayFab/Fusion transport settings, client preferences, camera smoothing, and debug-overlay layout are deliberately outside this match-balance configuration.
+
 Bootstrap lifetime scopes own stable argument/configuration flow and delegate changing VContainer registrations to role-specific `ClientServiceComposition` and `ServerServiceComposition` classes. Client diagnostic lifetime is owned by `ClientLocalProcessDiagnostics`, while the extensible overlay list lives in `ClientDebugOverlayComposition`. Editor bootstrap generation follows the same split: `LocalBootstrapSceneGenerator` owns asset/scene persistence, while network-prefab and client-scene contents live in dedicated composition classes.
 
 ## Runtime Authority Model

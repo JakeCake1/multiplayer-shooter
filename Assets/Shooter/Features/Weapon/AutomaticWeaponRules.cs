@@ -4,7 +4,7 @@ namespace Shooter.Features.Weapon
 {
     public sealed class AutomaticWeaponRules
     {
-        public AutomaticWeaponRules(float roundsPerMinute, float range = 20f, int damagePerHit = 25)
+        public AutomaticWeaponRules(float roundsPerMinute, float range, int damagePerHit)
         {
             ValidateRoundsPerMinute(roundsPerMinute);
             ValidateRange(range);

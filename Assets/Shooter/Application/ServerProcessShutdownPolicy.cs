@@ -4,8 +4,6 @@ namespace Shooter.Application
 {
     public sealed class ServerProcessShutdownPolicy
     {
-        public const int DefaultMatchFinishedGracePeriodSeconds = 10;
-
         public ServerProcessShutdownPolicy(bool shutdownAfterMatchFinished, TimeSpan matchFinishedGracePeriod)
         {
             if (matchFinishedGracePeriod < TimeSpan.Zero)

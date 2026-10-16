@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "match": {
+    "requiredPlayerCount": 2,
+    "countdownSeconds": 3.0,
+    "durationSeconds": 25.0,
+    "finishingSeconds": 1.0,
+    "serverShutdownGraceSeconds": 10.0
+  },
+  "player": {
+    "movementSpeed": 5.0,
+    "movementAcceleration": 40.0,
+    "movementBraking": 40.0,
+    "jumpSpeed": 7.0,
+    "gravity": -20.0,
+    "maximumHealth": 100,
+    "respawnDelaySeconds": 3.0,
+    "minimumLookPitch": -85.0,
+    "maximumLookPitch": 85.0
+  },
+  "weapon": {
+    "roundsPerMinute": 600.0,
+    "range": 20.0,
+    "damagePerHit": 25,
+    "shotOriginHeight": 0.5,
+    "shotOriginForwardOffset": 0.6
+  }
+}

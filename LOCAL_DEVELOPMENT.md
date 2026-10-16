@@ -48,6 +48,8 @@ Both outputs are Development builds with Script Debugging enabled, so Rider can 
 
 The build also rebuilds Addressables content. `Player`, `MatchState`, and the shared collision arena are loaded by address at runtime and are no longer serialized into the bootstrap scenes.
 
+Match balance and lifecycle values are stored in `Assets/Shooter/Configuration/MatchConfiguration.json`. Both client and server load this Addressable once during bootstrap, before Fusion starts. After changing it, rebuild Addressables or rebuild the players so every process receives the same configuration; changing the source file does not hot-reload a running match.
+
 In Rider, use `Run > Attach to Unity Process` and select the exact PID printed by the local launcher.
 
 ## Run

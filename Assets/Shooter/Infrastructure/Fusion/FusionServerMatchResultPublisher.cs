@@ -8,9 +8,15 @@ namespace Shooter.Infrastructure.Fusion
 {
     public sealed class FusionServerMatchResultPublisher
     {
-        private const int RequiredResultPlayerCount = 2;
         private static readonly MatchResultRules Rules = new MatchResultRules();
-        private readonly Dictionary<int, int> _scoresByPlayerId = new Dictionary<int, int>(RequiredResultPlayerCount);
+        private readonly int _requiredPlayerCount;
+        private readonly Dictionary<int, int> _scoresByPlayerId;
+
+        public FusionServerMatchResultPublisher(int requiredPlayerCount)
+        {
+            _requiredPlayerCount = requiredPlayerCount > 0 ? requiredPlayerCount : throw new ArgumentOutOfRangeException(nameof(requiredPlayerCount));
+            _scoresByPlayerId = new Dictionary<int, int>(_requiredPlayerCount);
+        }
 
         public void Reset()
         {
@@ -41,7 +47,7 @@ namespace Shooter.Infrastructure.Fusion
 
             CaptureScores(runner);
             var scores = GetCapturedScores();
-            if (scores.Count != RequiredResultPlayerCount)
+            if (scores.Count != _requiredPlayerCount)
             {
                 return false;
             }
@@ -80,7 +86,7 @@ namespace Shooter.Infrastructure.Fusion
             CaptureScores(runner);
             CapturePlayerScore(forfeitingPlayer, forfeitingPlayerObject);
             var scores = GetCapturedScores();
-            if (scores.Count != RequiredResultPlayerCount)
+            if (scores.Count != _requiredPlayerCount)
             {
                 return false;
             }

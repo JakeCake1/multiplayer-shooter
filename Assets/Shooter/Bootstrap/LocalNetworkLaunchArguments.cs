@@ -8,7 +8,6 @@ namespace Shooter.Bootstrap
     {
         public const string DefaultSessionName = "local-1v1";
         public const ushort DefaultServerPort = 27015;
-        public const int PlayerCount = 2;
 
         private const string SessionOption = "--shooter-session";
         private const string PortOption = "--shooter-port";
@@ -17,19 +16,19 @@ namespace Shooter.Bootstrap
         private const string PlayerIdOption = "--shooter-player-id";
         private const string PlayFabMatchmakingQueueOption = "--shooter-playfab-matchmaking-queue";
 
-        public static NetworkSessionStartRequest CreateClientRequest(string[] arguments)
+        public static NetworkSessionStartRequest CreateClientRequest(string[] arguments, int playerCount)
         {
             ValidateArguments(arguments);
-            return NetworkSessionStartRequest.ForClient(ReadSessionName(arguments), PlayerCount);
+            return NetworkSessionStartRequest.ForClient(ReadSessionName(arguments), playerCount);
         }
 
-        public static NetworkSessionStartRequest CreateServerRequest(string[] arguments)
+        public static NetworkSessionStartRequest CreateServerRequest(string[] arguments, int playerCount)
         {
             ValidateArguments(arguments);
             var sessionName = ReadSessionName(arguments);
             var portText = ReadOption(arguments, PortOption);
             var port = portText == null ? DefaultServerPort : ParsePort(portText);
-            return NetworkSessionStartRequest.ForServer(sessionName, port, PlayerCount);
+            return NetworkSessionStartRequest.ForServer(sessionName, port, playerCount);
         }
 
         public static string GetShutdownSignalPath(string[] arguments)

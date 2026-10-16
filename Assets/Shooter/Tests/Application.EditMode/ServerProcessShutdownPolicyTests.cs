@@ -14,7 +14,7 @@ namespace Shooter.Application.Tests
         [Test]
         public void PreservesConfiguredBehavior()
         {
-            var gracePeriod = TimeSpan.FromSeconds(ServerProcessShutdownPolicy.DefaultMatchFinishedGracePeriodSeconds);
+            var gracePeriod = TimeSpan.FromSeconds(10d);
             var policy = new ServerProcessShutdownPolicy(true, gracePeriod);
 
             Assert.That(policy.ShutdownAfterMatchFinished, Is.True);

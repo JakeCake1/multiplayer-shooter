@@ -8,21 +8,21 @@ namespace Shooter.Infrastructure.Fusion
     [RequireComponent(typeof(NetworkObject))]
     public sealed class FusionPlayerHealthState : NetworkBehaviour
     {
-        private const int DefaultMaxHealth = 100;
-        private static readonly PlayerHealthRules Rules = new PlayerHealthRules(DefaultMaxHealth);
+        private PlayerHealthRules _rules;
 
         [Networked]
         public int CurrentHealth { get; private set; }
 
-        public int MaxHealth => Rules.MaxHealth;
+        public int MaxHealth => _rules.MaxHealth;
 
-        public bool IsDead => Rules.IsDead(CurrentHealth);
+        public bool IsDead => _rules.IsDead(CurrentHealth);
 
         public override void Spawned()
         {
+            _rules = new PlayerHealthRules(FusionMatchConfigurationResolver.Resolve(Runner).Player.MaximumHealth);
             if (Object.HasStateAuthority)
             {
-                CurrentHealth = Rules.MaxHealth;
+                CurrentHealth = _rules.MaxHealth;
             }
         }
 
@@ -31,14 +31,14 @@ namespace Shooter.Infrastructure.Fusion
             EnsureStateAuthority();
 
             var previousHealth = CurrentHealth;
-            CurrentHealth = Rules.ApplyDamage(CurrentHealth, damage);
+            CurrentHealth = _rules.ApplyDamage(CurrentHealth, damage);
             return previousHealth - CurrentHealth;
         }
 
         public void RestoreFullHealth()
         {
             EnsureStateAuthority();
-            CurrentHealth = Rules.MaxHealth;
+            CurrentHealth = _rules.MaxHealth;
         }
 
         private void EnsureStateAuthority()

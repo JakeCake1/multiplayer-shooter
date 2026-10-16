@@ -10,8 +10,7 @@ namespace Shooter.Infrastructure.Fusion
     [RequireComponent(typeof(FusionPlayerHealthState))]
     public sealed class FusionServerPlayerRespawn : NetworkBehaviour
     {
-        private const float RespawnDelaySeconds = 3f;
-        private static readonly PlayerRespawnRules Rules = new PlayerRespawnRules(RespawnDelaySeconds);
+        private PlayerRespawnRules _rules;
         private FusionPlayerHealthState _healthState;
         private NetworkCharacterController _characterController;
         private FusionMatchState _matchState;
@@ -30,6 +29,7 @@ namespace Shooter.Infrastructure.Fusion
 
         public override void Spawned()
         {
+            _rules = new PlayerRespawnRules(FusionMatchConfigurationResolver.Resolve(Runner).Player.RespawnDelaySeconds);
             enabled = Object.HasStateAuthority;
             if (!enabled)
             {
@@ -80,8 +80,8 @@ namespace Shooter.Infrastructure.Fusion
         private void StartRespawn()
         {
             IsRespawning = true;
-            RespawnTimer = TickTimer.CreateFromSeconds(Runner, Rules.DelaySeconds);
-            Debug.Log($"[Respawn][Server] Player {Object.InputAuthority} will respawn in {Rules.DelaySeconds:0.0}s.");
+            RespawnTimer = TickTimer.CreateFromSeconds(Runner, _rules.DelaySeconds);
+            Debug.Log($"[Respawn][Server] Player {Object.InputAuthority} will respawn in {_rules.DelaySeconds:0.0}s.");
         }
 
         private void CompleteRespawnIfReady()

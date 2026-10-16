@@ -9,7 +9,7 @@ namespace Shooter.Tests.Features.Player
         [TestCase(-90f, -90f, 270f, -85f)]
         public void NormalizesYawAndClampsPitch(float yaw, float pitch, float expectedYaw, float expectedPitch)
         {
-            var valid = PlayerLookRules.TrySanitize(yaw, pitch, out var rotation);
+            var valid = PlayerLookRules.TrySanitize(yaw, pitch, -85f, 85f, out var rotation);
 
             Assert.That(valid, Is.True);
             Assert.That(rotation.Yaw, Is.EqualTo(expectedYaw));
@@ -20,7 +20,7 @@ namespace Shooter.Tests.Features.Player
         [TestCase(0f, float.PositiveInfinity)]
         public void RejectsNonFiniteLook(float yaw, float pitch)
         {
-            Assert.That(PlayerLookRules.TrySanitize(yaw, pitch, out _), Is.False);
+            Assert.That(PlayerLookRules.TrySanitize(yaw, pitch, -85f, 85f, out _), Is.False);
         }
     }
 }

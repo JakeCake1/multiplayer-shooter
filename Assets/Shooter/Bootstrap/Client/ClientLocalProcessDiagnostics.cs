@@ -7,9 +7,11 @@ namespace Shooter.Bootstrap.Client
     public sealed class ClientLocalProcessDiagnostics : LocalProcessDiagnosticsBase
     {
         private LocalProcessDebugOverlay _overlay;
+        private readonly MatchConfiguration _configuration;
 
-        public ClientLocalProcessDiagnostics(INetworkSession networkSession, NetworkSessionStartRequest request) : base(networkSession, request)
+        public ClientLocalProcessDiagnostics(INetworkSession networkSession, NetworkSessionStartRequest request, MatchConfiguration configuration) : base(networkSession, request)
         {
+            _configuration = configuration ?? throw new System.ArgumentNullException(nameof(configuration));
         }
 
         protected override void OnStarted(NetworkSessionState state)
@@ -26,7 +28,7 @@ namespace Shooter.Bootstrap.Client
         {
             var overlayObject = new GameObject("Local Client Diagnostics");
             Object.DontDestroyOnLoad(overlayObject);
-            _overlay = ClientDebugOverlayComposition.AttachTo(overlayObject);
+            _overlay = ClientDebugOverlayComposition.AttachTo(overlayObject, _configuration);
             _overlay.SetText(BuildText(state));
         }
 

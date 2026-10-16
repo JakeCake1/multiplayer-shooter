@@ -8,7 +8,7 @@ namespace Shooter.Bootstrap.Tests
         [Test]
         public void CreateRequest_ClientUsesDefaultSession()
         {
-            var request = LocalNetworkLaunchArguments.CreateClientRequest(new[] { "ShooterClient.exe" });
+            var request = LocalNetworkLaunchArguments.CreateClientRequest(new[] { "ShooterClient.exe" }, 2);
 
             Assert.That(request.Role, Is.EqualTo(NetworkSessionRole.Client));
             Assert.That(request.SessionName, Is.EqualTo(LocalNetworkLaunchArguments.DefaultSessionName));
@@ -19,7 +19,7 @@ namespace Shooter.Bootstrap.Tests
         [Test]
         public void CreateRequest_ServerReadsSessionAndPort()
         {
-            var request = LocalNetworkLaunchArguments.CreateServerRequest(new[] { "ShooterServer.exe", "--shooter-session", "test-match", "--shooter-port", "28000" });
+            var request = LocalNetworkLaunchArguments.CreateServerRequest(new[] { "ShooterServer.exe", "--shooter-session", "test-match", "--shooter-port", "28000" }, 2);
 
             Assert.That(request.Role, Is.EqualTo(NetworkSessionRole.Server));
             Assert.That(request.SessionName, Is.EqualTo("test-match"));
@@ -31,13 +31,13 @@ namespace Shooter.Bootstrap.Tests
         [TestCase("not-a-port")]
         public void CreateRequest_ServerRejectsInvalidPort(string value)
         {
-            Assert.That(() => LocalNetworkLaunchArguments.CreateServerRequest(new[] { "ShooterServer.exe", "--shooter-port", value }), Throws.ArgumentException);
+            Assert.That(() => LocalNetworkLaunchArguments.CreateServerRequest(new[] { "ShooterServer.exe", "--shooter-port", value }, 2), Throws.ArgumentException);
         }
 
         [Test]
         public void CreateRequest_RejectsOptionWithoutValue()
         {
-            Assert.That(() => LocalNetworkLaunchArguments.CreateClientRequest(new[] { "ShooterClient.exe", "--shooter-session" }), Throws.ArgumentException);
+            Assert.That(() => LocalNetworkLaunchArguments.CreateClientRequest(new[] { "ShooterClient.exe", "--shooter-session" }, 2), Throws.ArgumentException);
         }
 
         [Test]

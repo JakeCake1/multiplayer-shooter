@@ -14,14 +14,16 @@ namespace Shooter.Infrastructure.Fusion
         private readonly MatchRules _matchRules;
         private readonly IServerMatchLifecycle _matchLifecycle;
         private readonly ServerProcessShutdownPolicy _shutdownPolicy;
+        private readonly MatchConfiguration _configuration;
 
-        public FusionServerNetworkSession(FusionNetworkAssetLoader assetLoader, FusionArenaLoader arenaLoader, MatchRules matchRules, IServerMatchLifecycle matchLifecycle, ServerProcessShutdownPolicy shutdownPolicy)
+        public FusionServerNetworkSession(FusionNetworkAssetLoader assetLoader, FusionArenaLoader arenaLoader, MatchRules matchRules, IServerMatchLifecycle matchLifecycle, ServerProcessShutdownPolicy shutdownPolicy, MatchConfiguration configuration)
         {
             _assetLoader = assetLoader ?? throw new ArgumentNullException(nameof(assetLoader));
             _arenaLoader = arenaLoader ?? throw new ArgumentNullException(nameof(arenaLoader));
             _matchRules = matchRules ?? throw new ArgumentNullException(nameof(matchRules));
             _matchLifecycle = matchLifecycle ?? throw new ArgumentNullException(nameof(matchLifecycle));
             _shutdownPolicy = shutdownPolicy ?? throw new ArgumentNullException(nameof(shutdownPolicy));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
         protected override NetworkSessionRole Role => NetworkSessionRole.Server;
@@ -34,6 +36,7 @@ namespace Shooter.Infrastructure.Fusion
         protected override NetworkRunner CreateRunner()
         {
             var runner = CreateRunnerBase();
+            runner.gameObject.AddComponent<FusionMatchConfigurationSource>().Configure(_configuration);
             runner.ProvideInput = false;
             var matchController = runner.gameObject.AddComponent<FusionServerMatchController>();
             matchController.Configure(_matchRules, _matchLifecycle, reuseFinishedMatches: !_shutdownPolicy.ShutdownAfterMatchFinished);

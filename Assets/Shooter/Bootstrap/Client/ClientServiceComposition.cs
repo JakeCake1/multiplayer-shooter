@@ -10,8 +10,9 @@ namespace Shooter.Bootstrap.Client
 {
     public static class ClientServiceComposition
     {
-        public static void Register(IContainerBuilder builder, NetworkSessionStartRequest request, PlayFabClientOptions playFabOptions, PlayFabMatchmakingOptions matchmakingOptions, string shutdownSignalPath)
+        public static void Register(IContainerBuilder builder, MatchConfiguration configuration, NetworkSessionStartRequest request, PlayFabClientOptions playFabOptions, PlayFabMatchmakingOptions matchmakingOptions, string shutdownSignalPath)
         {
+            builder.RegisterInstance(configuration);
             builder.Register<UnityClientInputSettings>(Lifetime.Singleton).As<IClientInputSettings>();
             builder.Register<FusionNetworkAssetLoader>(Lifetime.Singleton);
             builder.Register<FusionArenaLoader>(Lifetime.Singleton);

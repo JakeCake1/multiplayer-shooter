@@ -1,6 +1,7 @@
 using global::Fusion;
 using Shooter.Features.MatchRules;
 using Shooter.Features.Player;
+using Shooter.Application;
 using UnityEngine;
 
 namespace Shooter.Infrastructure.Fusion
@@ -10,11 +11,7 @@ namespace Shooter.Infrastructure.Fusion
     [RequireComponent(typeof(FusionPlayerHealthState))]
     public sealed class FusionPlayerAvatar : NetworkBehaviour
     {
-        private const float MovementSpeed = 5f;
-        private const float MovementAcceleration = 40f;
-        private const float MovementBraking = 40f;
-        private const float JumpSpeed = 7f;
-        private const float Gravity = -20f;
+        private PlayerGameplayConfiguration _configuration;
         private FusionPlayerHealthState _healthState;
         private NetworkCharacterController _characterController;
         private FusionMatchState _matchState;
@@ -27,6 +24,7 @@ namespace Shooter.Infrastructure.Fusion
 
         public override void Spawned()
         {
+            _configuration = FusionMatchConfigurationResolver.Resolve(Runner).Player;
             _healthState = GetComponent<FusionPlayerHealthState>();
             _characterController = GetComponent<NetworkCharacterController>();
             ConfigureCharacterController();
@@ -84,22 +82,22 @@ namespace Shooter.Infrastructure.Fusion
         {
             if (PlayerJumpRules.CanStartJump(jumpPressed, _characterController.Grounded))
             {
-                _characterController.Jump(overrideImpulse: JumpSpeed);
+                _characterController.Jump(overrideImpulse: _configuration.JumpSpeed);
             }
         }
 
         private void ConfigureCharacterController()
         {
-            _characterController.gravity = Gravity;
-            _characterController.maxSpeed = MovementSpeed;
-            _characterController.acceleration = MovementAcceleration;
-            _characterController.braking = MovementBraking;
+            _characterController.gravity = _configuration.Gravity;
+            _characterController.maxSpeed = _configuration.MovementSpeed;
+            _characterController.acceleration = _configuration.MovementAcceleration;
+            _characterController.braking = _configuration.MovementBraking;
             _characterController.rotationSpeed = 0f;
         }
 
         private PlayerLookRotation ResolveLookRotation(Vector2 inputLookRotation)
         {
-            if (PlayerLookRules.TrySanitize(inputLookRotation.x, inputLookRotation.y, out var lookRotation))
+            if (PlayerLookRules.TrySanitize(inputLookRotation.x, inputLookRotation.y, _configuration.MinimumLookPitch, _configuration.MaximumLookPitch, out var lookRotation))
             {
                 return lookRotation;
             }

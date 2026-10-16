@@ -10,9 +10,9 @@ namespace Shooter.Bootstrap.Server
 {
     public static class ServerServiceComposition
     {
-        public static void RegisterLocal(IContainerBuilder builder, MatchRules matchRules, NetworkSessionStartRequest request, string shutdownSignalPath)
+        public static void RegisterLocal(IContainerBuilder builder, MatchConfiguration configuration, MatchRules matchRules, NetworkSessionStartRequest request, string shutdownSignalPath)
         {
-            RegisterShared(builder, matchRules);
+            RegisterShared(builder, configuration, matchRules);
             builder.RegisterInstance(new ServerProcessShutdownPolicy(false, TimeSpan.Zero));
             builder.RegisterInstance(request);
             builder.Register<LocalServerAllocationService>(Lifetime.Singleton).As<IServerAllocationService>();
@@ -21,10 +21,10 @@ namespace Shooter.Bootstrap.Server
             RegisterSessionHost(builder);
         }
 
-        public static void RegisterPlayFab(IContainerBuilder builder, MatchRules matchRules)
+        public static void RegisterPlayFab(IContainerBuilder builder, MatchConfiguration configuration, MatchRules matchRules)
         {
-            RegisterShared(builder, matchRules);
-            builder.RegisterInstance(new ServerProcessShutdownPolicy(true, TimeSpan.FromSeconds(ServerProcessShutdownPolicy.DefaultMatchFinishedGracePeriodSeconds)));
+            RegisterShared(builder, configuration, matchRules);
+            builder.RegisterInstance(new ServerProcessShutdownPolicy(true, TimeSpan.FromSeconds(configuration.Match.ServerShutdownGraceSeconds)));
 #if ENABLE_PLAYFABSERVER_API
             builder.Register<PlayFabServerAllocationService>(Lifetime.Singleton).As<IServerAllocationService>();
             RegisterSessionHost(builder);
@@ -33,8 +33,9 @@ namespace Shooter.Bootstrap.Server
 #endif
         }
 
-        private static void RegisterShared(IContainerBuilder builder, MatchRules matchRules)
+        private static void RegisterShared(IContainerBuilder builder, MatchConfiguration configuration, MatchRules matchRules)
         {
+            builder.RegisterInstance(configuration);
             builder.RegisterInstance(matchRules);
             builder.Register<ServerMatchLifecycle>(Lifetime.Singleton).As<IServerMatchLifecycle>();
             builder.Register<FusionNetworkAssetLoader>(Lifetime.Singleton);
