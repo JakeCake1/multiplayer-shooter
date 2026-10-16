@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using UnityEditor.Build;
@@ -26,16 +27,24 @@ namespace Shooter.Bootstrap.Editor
             var projectRoot = GetProjectRoot();
             var serverDirectory = ResolvePath(projectRoot, PlayFabBuildLayout.ServerDirectoryPath);
             var serverExecutable = ResolvePath(projectRoot, PlayFabBuildLayout.ServerBuildPath);
-            var packagePath = ResolvePath(projectRoot, PlayFabBuildLayout.ServerPackagePath);
+            var packagePath = CreateUniquePackagePath(projectRoot);
             EnsureServerBuildExists(serverDirectory, serverExecutable);
             Directory.CreateDirectory(Path.GetDirectoryName(packagePath));
-            if (File.Exists(packagePath))
-            {
-                File.Delete(packagePath);
-            }
-
             ZipFile.CreateFromDirectory(serverDirectory, packagePath, System.IO.Compression.CompressionLevel.Optimal, includeBaseDirectory: false);
             Debug.Log($"[PlayFabBuild] Packaged dedicated server at '{packagePath}'.");
+        }
+
+        private static string CreateUniquePackagePath(string projectRoot)
+        {
+            var packageId = CreatePackageId();
+            var packageFileName = $"{PlayFabBuildLayout.ServerPackageBaseName}-{packageId}.zip";
+            return Path.Combine(ResolvePath(projectRoot, PlayFabBuildLayout.BuildRootPath), packageFileName);
+        }
+
+        private static string CreatePackageId()
+        {
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmssfff'Z'", CultureInfo.InvariantCulture);
+            return $"{timestamp}-{Guid.NewGuid():N}";
         }
 
         private static string GetProjectRoot()

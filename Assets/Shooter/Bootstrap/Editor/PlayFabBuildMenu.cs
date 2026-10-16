@@ -23,7 +23,7 @@ namespace Shooter.Bootstrap.Editor
         [MenuItem("Shooter/PlayFab Deployment/Clean Build and Package")]
         public static void CleanBuild()
         {
-            if (!EditorUtility.DisplayDialog("Clean PlayFab build", "Delete the PlayFab dedicated-server build and ZIP package?", "Clean", "Cancel"))
+            if (!EditorUtility.DisplayDialog("Clean PlayFab build", "Delete the PlayFab dedicated-server build and all ZIP packages?", "Clean", "Cancel"))
             {
                 return;
             }

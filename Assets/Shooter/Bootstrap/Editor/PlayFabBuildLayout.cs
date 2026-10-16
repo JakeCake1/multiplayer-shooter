@@ -5,6 +5,6 @@ namespace Shooter.Bootstrap.Editor
         public const string BuildRootPath = "Builds/PlayFab";
         public const string ServerDirectoryPath = "Builds/PlayFab/Server";
         public const string ServerBuildPath = "Builds/PlayFab/Server/ShooterServer.exe";
-        public const string ServerPackagePath = "Builds/PlayFab/ShooterServer.zip";
+        public const string ServerPackageBaseName = "ShooterServer";
     }
 }

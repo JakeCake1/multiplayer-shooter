@@ -11,10 +11,10 @@ Shooter > PlayFab Deployment > Build Production Dedicated Server Package
 This creates a clean non-Development Unity Dedicated Server build and packages it as:
 
 ```text
-Builds/PlayFab/ShooterServer.zip
+Builds/PlayFab/ShooterServer-<UTC timestamp>-<GUID>.zip
 ```
 
-The executable is at the root of the ZIP. `Package Existing Dedicated Server` recreates only the ZIP, while `Clean Build and Package` removes both PlayFab outputs.
+The executable is at the root of the ZIP. Every packaging operation creates a uniquely named archive such as `ShooterServer-20261016T123456789Z-6f9619ff8b864b28a3d54ebc8f6f8f31.zip`, so repeated uploads are easy to distinguish in Game Manager. `Package Existing Dedicated Server` preserves earlier archives, while `Clean Build and Package` removes the server build and all PlayFab ZIP packages.
 
 ## 2. Create the Multiplayer Servers build
 
@@ -25,7 +25,7 @@ Use the following initial test configuration:
 | Setting | Value |
 |---|---|
 | Server type | Managed Windows / Windows Server Core |
-| Asset | `ShooterServer.zip` |
+| Asset | The newly created `ShooterServer-<UTC timestamp>-<GUID>.zip` |
 | Start command | `C:\Assets\ShooterServer.exe -batchmode -nographics -logFile -` |
 | Servers per machine | `1` |
 | Port name | `game_port` |
