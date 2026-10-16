@@ -154,7 +154,7 @@ MonoBehaviour:
   autoInjectGameObjects: []
   requiredPlayerCount: 2
   countdownSeconds: 3
-  matchSeconds: 60
+  matchSeconds: 20
   finishingSeconds: 1
 --- !u!4 &648990380
 Transform:
