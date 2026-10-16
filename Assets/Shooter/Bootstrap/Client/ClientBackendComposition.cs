@@ -29,7 +29,7 @@ namespace Shooter.Bootstrap.Client
             }
 
             builder.RegisterInstance(matchmakingOptions);
-            builder.Register<PlayFabMultiplayerRuntime>(Lifetime.Singleton);
+            builder.Register<PlayFabMatchmakingApiClient>(Lifetime.Singleton);
             builder.Register<PlayFabMatchmakingTicketCleanupService>(Lifetime.Singleton);
             builder.Register<PlayFabQosMatchmakingAttributesProvider>(Lifetime.Singleton).As<IPlayFabMatchmakingAttributesProvider>();
             builder.Register<PlayFabMatchmakingService>(Lifetime.Singleton).As<IMatchmakingService>();

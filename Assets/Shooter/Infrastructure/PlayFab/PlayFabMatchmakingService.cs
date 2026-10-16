@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using PlayFab.Multiplayer;
 using Shooter.Application;
 using UnityEngine;
 
@@ -9,32 +8,29 @@ namespace Shooter.Infrastructure.PlayFab
 {
     public sealed class PlayFabMatchmakingService : IMatchmakingService, IDisposable
     {
+        private const int StatusPollIntervalMilliseconds = 2000;
         private readonly IPlayFabPlayerSession _playerSession;
         private readonly IPlayFabMatchmakingAttributesProvider _attributesProvider;
         private readonly PlayFabMatchmakingOptions _options;
-        private readonly PlayFabMultiplayerRuntime _runtime;
+        private readonly PlayFabMatchmakingApiClient _apiClient;
         private readonly PlayFabMatchmakingTicketCleanupService _ticketCleanup;
-        private MatchmakingTicket _activeTicket;
-        private TaskCompletionSource<MatchmakingResult> _activeCompletion;
-        private bool _requiresTicketCleanup;
+        private CancellationTokenSource _activeSearchCancellation;
         private bool _disposed;
 
-        public PlayFabMatchmakingService(IPlayFabPlayerSession playerSession, IPlayFabMatchmakingAttributesProvider attributesProvider, PlayFabMatchmakingOptions options, PlayFabMultiplayerRuntime runtime, PlayFabMatchmakingTicketCleanupService ticketCleanup)
+        public PlayFabMatchmakingService(IPlayFabPlayerSession playerSession, IPlayFabMatchmakingAttributesProvider attributesProvider, PlayFabMatchmakingOptions options, PlayFabMatchmakingApiClient apiClient, PlayFabMatchmakingTicketCleanupService ticketCleanup)
         {
             _playerSession = playerSession ?? throw new ArgumentNullException(nameof(playerSession));
             _attributesProvider = attributesProvider ?? throw new ArgumentNullException(nameof(attributesProvider));
             _options = options ?? throw new ArgumentNullException(nameof(options));
-            _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+            _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
             _ticketCleanup = ticketCleanup ?? throw new ArgumentNullException(nameof(ticketCleanup));
-            RegisterEvents();
         }
 
         public async Task<MatchmakingResult> FindMatchAsync(CancellationToken cancellationToken)
         {
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
-
-            if (_activeCompletion != null)
+            if (_activeSearchCancellation != null)
             {
                 return CreateFailureResult("A PlayFab matchmaking request is already active.");
             }
@@ -44,25 +40,34 @@ namespace Shooter.Infrastructure.PlayFab
                 return CreateFailureResult("PlayFab matchmaking requires an authenticated player.");
             }
 
-            try
+            using (var searchCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
-                var attributes = await _attributesProvider.CreateAttributesAsync(cancellationToken);
-                await CleanupPreviousRequestAsync(cancellationToken);
-                StartMatchmakingRequest(attributes);
+                _activeSearchCancellation = searchCancellation;
+                searchCancellation.CancelAfter(_options.CompletionWatchdogTimeout);
+                try
+                {
+                    return await FindMatchCoreAsync(searchCancellation.Token);
+                }
+                catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                {
+                    await TryCleanupAsync();
+                    return CreateFailureResult($"PlayFab matchmaking timed out after {_options.CompletionWatchdogTimeout.TotalSeconds:0} seconds.");
+                }
+                catch (OperationCanceledException)
+                {
+                    await TryCleanupAsync();
+                    throw;
+                }
+                catch (Exception exception)
+                {
+                    await TryCleanupAsync();
+                    return CreateFailureResult($"PlayFab matchmaking failed: {exception.Message}", exception);
+                }
+                finally
+                {
+                    _activeSearchCancellation = null;
+                }
             }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception exception)
-            {
-                ClearActiveRequest();
-                return CreateFailureResult($"PlayFab failed to start matchmaking: {exception.Message}", exception);
-            }
-
-            LogTicketRequested();
-            var completion = _activeCompletion;
-            return await WaitForCompletionAsync(completion, cancellationToken);
         }
 
         public void Dispose()
@@ -73,152 +78,72 @@ namespace Shooter.Infrastructure.PlayFab
             }
 
             _disposed = true;
-            UnregisterEvents();
-            CancelActiveRequest();
+            _activeSearchCancellation?.Cancel();
         }
 
-        private MatchmakingTicket CreateTicket(string attributes)
+        private async Task<MatchmakingResult> FindMatchCoreAsync(CancellationToken cancellationToken)
         {
-            var user = new MatchUser(_playerSession.PlayerEntity, attributes);
-            return PlayFabMultiplayer.CreateMatchmakingTicket(user, _options.QueueName, _options.TimeoutInSeconds);
+            var attributes = await _attributesProvider.CreateAttributesAsync(cancellationToken);
+            await _ticketCleanup.CancelOutstandingTicketsAsync(cancellationToken);
+            var ticketId = await _apiClient.CreateTicketAsync(attributes, cancellationToken);
+            Debug.Log($"[PlayFab][Matchmaking] EntityId '{GetPlayerEntityId()}' created ticket '{ticketId}' for queue '{_options.QueueName}'.");
+            return await PollTicketAsync(ticketId, cancellationToken);
         }
 
-        private void StartMatchmakingRequest(string attributes)
+        private async Task<MatchmakingResult> PollTicketAsync(string ticketId, CancellationToken cancellationToken)
         {
-            _runtime.EnsureInitialized();
-            _activeCompletion = new TaskCompletionSource<MatchmakingResult>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _activeTicket = CreateTicket(attributes);
-            if (_activeTicket == null)
+            string previousStatus = null;
+            while (true)
             {
-                throw new InvalidOperationException("The SDK returned no matchmaking ticket.");
+                cancellationToken.ThrowIfCancellationRequested();
+                var ticket = await _apiClient.GetTicketAsync(ticketId, cancellationToken);
+                if (!string.Equals(previousStatus, ticket.Status, StringComparison.Ordinal))
+                {
+                    previousStatus = ticket.Status;
+                    Debug.Log($"[PlayFab][Matchmaking] EntityId '{GetPlayerEntityId()}' ticket '{ticketId}' status: {ticket.Status}.");
+                }
+
+                if (string.Equals(ticket.Status, "Matched", StringComparison.OrdinalIgnoreCase))
+                {
+                    return await CreateMatchedResultAsync(ticket, cancellationToken);
+                }
+
+                if (string.Equals(ticket.Status, "Canceled", StringComparison.OrdinalIgnoreCase))
+                {
+                    return CreateFailureResult($"PlayFab matchmaking ticket '{ticketId}' was canceled: {ticket.CancellationReason ?? "unknown reason"}.");
+                }
+
+                await Task.Delay(StatusPollIntervalMilliseconds, cancellationToken);
             }
         }
 
-        private void LogTicketRequested()
+        private async Task<MatchmakingResult> CreateMatchedResultAsync(PlayFabMatchmakingTicketSnapshot ticket, CancellationToken cancellationToken)
         {
-            Debug.Log($"[PlayFab][Matchmaking] EntityId '{GetPlayerEntityId()}' created a ticket request for queue '{_options.QueueName}'; TicketId is pending SDK confirmation.");
-        }
-
-        private void RegisterEvents()
-        {
-            PlayFabMultiplayer.OnMatchmakingTicketStatusChanged += HandleTicketStatusChanged;
-            PlayFabMultiplayer.OnMatchmakingTicketCompleted += HandleTicketCompleted;
-        }
-
-        private void UnregisterEvents()
-        {
-            PlayFabMultiplayer.OnMatchmakingTicketStatusChanged -= HandleTicketStatusChanged;
-            PlayFabMultiplayer.OnMatchmakingTicketCompleted -= HandleTicketCompleted;
-        }
-
-        private void HandleTicketStatusChanged(MatchmakingTicket ticket)
-        {
-            if (!ReferenceEquals(ticket, _activeTicket))
+            if (string.IsNullOrWhiteSpace(ticket.MatchId))
             {
-                return;
+                return CreateFailureResult($"PlayFab ticket '{ticket.TicketId}' matched without a MatchId.");
             }
 
-            Debug.Log($"[PlayFab][Matchmaking] EntityId '{GetPlayerEntityId()}' ticket '{ticket.TicketId}' status: {ticket.Status}.");
-        }
-
-        private void HandleTicketCompleted(MatchmakingTicket ticket, int result)
-        {
-            if (!ReferenceEquals(ticket, _activeTicket) || _activeCompletion == null)
-            {
-                return;
-            }
-
-            var completion = _activeCompletion;
-            var matchmakingResult = CreateCompletionResult(ticket, result);
-            _requiresTicketCleanup = true;
-            ClearActiveRequest();
-            completion.TrySetResult(matchmakingResult);
-        }
-
-        private MatchmakingResult CreateCompletionResult(MatchmakingTicket ticket, int result)
-        {
-            if (result != 0)
-            {
-                return CreateFailureResult($"PlayFab matchmaking failed (HRESULT 0x{result:X8}, status {ticket.Status}).");
-            }
-
-            if (ticket.Status != MatchmakingTicketStatus.Matched)
-            {
-                return CreateFailureResult($"PlayFab matchmaking completed with status {ticket.Status}.");
-            }
-
-            return CreateMatchedResult(ticket.GetMatchDetails());
-        }
-
-        private MatchmakingResult CreateMatchedResult(MatchmakingMatchDetails details)
-        {
-            if (details == null || string.IsNullOrWhiteSpace(details.MatchId))
-            {
-                return CreateFailureResult("PlayFab returned a match without a MatchId.");
-            }
-
-            if (details.ServerDetails == null)
+            var match = await _apiClient.GetMatchAsync(ticket.MatchId, cancellationToken);
+            if (!match.HasServerAllocation)
             {
                 return CreateFailureResult("PlayFab found a match but did not allocate a multiplayer server. Enable server allocation for the queue.");
             }
 
-            LogAllocatedServer(details);
-            return MatchmakingResult.Success(NetworkSessionStartRequest.ForClient(details.MatchId, _options.PlayerCount));
+            Debug.Log($"[PlayFab] Match '{match.MatchId}' allocated server {match.Ipv4Address}:{match.Port} in region '{match.Region}'. Fusion will join session '{match.MatchId}'.");
+            return MatchmakingResult.Success(NetworkSessionStartRequest.ForClient(match.MatchId, _options.PlayerCount));
         }
 
-        private static void LogAllocatedServer(MatchmakingMatchDetails details)
+        private async Task TryCleanupAsync()
         {
-            var server = details.ServerDetails;
-            var endpoint = server.Ports.Count > 0 ? $"{server.Ipv4Address}:{server.Ports[0].Num}" : server.Ipv4Address;
-            Debug.Log($"[PlayFab] Match '{details.MatchId}' allocated server {endpoint} in region '{server.Region}'. Fusion will join session '{details.MatchId}'.");
-        }
-
-        private void CancelActiveRequest()
-        {
-            var ticket = _activeTicket;
-            var completion = _activeCompletion;
-            ClearActiveRequest();
-            _requiresTicketCleanup = ticket != null;
-            ticket?.Cancel();
-            completion?.TrySetCanceled();
-        }
-
-        private async Task<MatchmakingResult> WaitForCompletionAsync(TaskCompletionSource<MatchmakingResult> completion, CancellationToken cancellationToken)
-        {
-            using (cancellationToken.Register(CancelActiveRequest))
-            using (var timeoutCancellation = new CancellationTokenSource())
+            try
             {
-                var timeout = Task.Delay(_options.CompletionWatchdogTimeout, timeoutCancellation.Token);
-                if (await Task.WhenAny(completion.Task, timeout) == completion.Task)
-                {
-                    timeoutCancellation.Cancel();
-                    return await completion.Task;
-                }
-
-                return CompleteTimedOutRequest(completion);
+                await _ticketCleanup.CancelOutstandingTicketsAsync(CancellationToken.None);
             }
-        }
-
-        private MatchmakingResult CompleteTimedOutRequest(TaskCompletionSource<MatchmakingResult> completion)
-        {
-            if (!ReferenceEquals(completion, _activeCompletion))
+            catch (Exception exception)
             {
-                return completion.Task.GetAwaiter().GetResult();
+                Debug.LogWarning($"[PlayFab][Matchmaking] Failed to clean up tickets after an interrupted search: {exception.Message}");
             }
-
-            var ticket = _activeTicket;
-            var timeoutSeconds = _options.CompletionWatchdogTimeout.TotalSeconds;
-            var result = CreateFailureResult($"PlayFab matchmaking timed out after {timeoutSeconds:0} seconds.");
-            if (!completion.TrySetResult(result))
-            {
-                return completion.Task.GetAwaiter().GetResult();
-            }
-
-            ClearActiveRequest();
-            _requiresTicketCleanup = ticket != null;
-            ticket?.Cancel();
-            Debug.LogWarning($"[PlayFab] Matchmaking completion watchdog expired after {timeoutSeconds:0} seconds; the active ticket was cancelled.");
-            return result;
         }
 
         private static MatchmakingResult CreateFailureResult(string message, Exception exception = null)
@@ -233,23 +158,6 @@ namespace Shooter.Infrastructure.PlayFab
             }
 
             return MatchmakingResult.Failure(message);
-        }
-
-        private void ClearActiveRequest()
-        {
-            _activeTicket = null;
-            _activeCompletion = null;
-        }
-
-        private async Task CleanupPreviousRequestAsync(CancellationToken cancellationToken)
-        {
-            if (!_requiresTicketCleanup)
-            {
-                return;
-            }
-
-            await _ticketCleanup.CancelOutstandingTicketsAsync(cancellationToken);
-            _requiresTicketCleanup = false;
         }
 
         private string GetPlayerEntityId()
