@@ -13,16 +13,19 @@ namespace Shooter.Infrastructure.PlayFab
         private readonly IPlayFabMatchmakingAttributesProvider _attributesProvider;
         private readonly PlayFabMatchmakingOptions _options;
         private readonly PlayFabMultiplayerRuntime _runtime;
+        private readonly PlayFabMatchmakingTicketCleanupService _ticketCleanup;
         private MatchmakingTicket _activeTicket;
         private TaskCompletionSource<MatchmakingResult> _activeCompletion;
+        private bool _requiresTicketCleanup;
         private bool _disposed;
 
-        public PlayFabMatchmakingService(IPlayFabPlayerSession playerSession, IPlayFabMatchmakingAttributesProvider attributesProvider, PlayFabMatchmakingOptions options, PlayFabMultiplayerRuntime runtime)
+        public PlayFabMatchmakingService(IPlayFabPlayerSession playerSession, IPlayFabMatchmakingAttributesProvider attributesProvider, PlayFabMatchmakingOptions options, PlayFabMultiplayerRuntime runtime, PlayFabMatchmakingTicketCleanupService ticketCleanup)
         {
             _playerSession = playerSession ?? throw new ArgumentNullException(nameof(playerSession));
             _attributesProvider = attributesProvider ?? throw new ArgumentNullException(nameof(attributesProvider));
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+            _ticketCleanup = ticketCleanup ?? throw new ArgumentNullException(nameof(ticketCleanup));
             RegisterEvents();
         }
 
@@ -44,6 +47,7 @@ namespace Shooter.Infrastructure.PlayFab
             try
             {
                 var attributes = await _attributesProvider.CreateAttributesAsync(cancellationToken);
+                await CleanupPreviousRequestAsync(cancellationToken);
                 StartMatchmakingRequest(attributes);
             }
             catch (OperationCanceledException)
@@ -126,6 +130,7 @@ namespace Shooter.Infrastructure.PlayFab
 
             var completion = _activeCompletion;
             var matchmakingResult = CreateCompletionResult(ticket, result);
+            _requiresTicketCleanup = true;
             ClearActiveRequest();
             completion.TrySetResult(matchmakingResult);
         }
@@ -173,6 +178,7 @@ namespace Shooter.Infrastructure.PlayFab
             var ticket = _activeTicket;
             var completion = _activeCompletion;
             ClearActiveRequest();
+            _requiresTicketCleanup = ticket != null;
             ticket?.Cancel();
             completion?.TrySetCanceled();
         }
@@ -209,6 +215,7 @@ namespace Shooter.Infrastructure.PlayFab
             }
 
             ClearActiveRequest();
+            _requiresTicketCleanup = ticket != null;
             ticket?.Cancel();
             Debug.LogWarning($"[PlayFab] Matchmaking completion watchdog expired after {timeoutSeconds:0} seconds; the active ticket was cancelled.");
             return result;
@@ -232,6 +239,17 @@ namespace Shooter.Infrastructure.PlayFab
         {
             _activeTicket = null;
             _activeCompletion = null;
+        }
+
+        private async Task CleanupPreviousRequestAsync(CancellationToken cancellationToken)
+        {
+            if (!_requiresTicketCleanup)
+            {
+                return;
+            }
+
+            await _ticketCleanup.CancelOutstandingTicketsAsync(cancellationToken);
+            _requiresTicketCleanup = false;
         }
 
         private string GetPlayerEntityId()
