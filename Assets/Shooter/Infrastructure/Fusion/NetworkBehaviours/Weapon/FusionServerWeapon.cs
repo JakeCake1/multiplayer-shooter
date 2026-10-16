@@ -64,15 +64,17 @@ namespace Shooter.Infrastructure.Fusion
         private bool CanAcceptFireInput()
         {
             ResolveMatchState();
-            return _matchState != null && MatchPhaseRules.AcceptsGameplayInput(_matchState.Phase) && !_healthState.IsDead;
+            return FusionNetworkBehaviourLifecycle.IsSpawned(_matchState) && MatchPhaseRules.AcceptsGameplayInput(_matchState.Phase) && !_healthState.IsDead;
         }
 
         private void ResolveMatchState()
         {
-            if (_matchState == null)
+            if (FusionNetworkBehaviourLifecycle.IsSpawned(_matchState))
             {
-                _matchState = FindFirstObjectByType<FusionMatchState>();
+                return;
             }
+
+            _matchState = FindFirstObjectByType<FusionMatchState>();
         }
 
         private static bool TryGetShotDirection(FusionPlayerInput input, out Vector3 shotDirection)

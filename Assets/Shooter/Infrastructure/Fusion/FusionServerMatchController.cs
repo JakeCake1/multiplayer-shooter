@@ -31,7 +31,7 @@ namespace Shooter.Infrastructure.Fusion
 
         public override void FixedUpdateNetwork()
         {
-            if (_replicatedState == null)
+            if (!HasSpawnedState())
             {
                 return;
             }
@@ -46,7 +46,7 @@ namespace Shooter.Infrastructure.Fusion
 
         public void HandlePlayerLeft(PlayerRef player, NetworkObject playerObject)
         {
-            if (_stateMachine == null || _stateMachine.Phase != MatchPhase.Playing)
+            if (_stateMachine == null || !HasSpawnedState() || _stateMachine.Phase != MatchPhase.Playing)
             {
                 return;
             }
@@ -71,6 +71,11 @@ namespace Shooter.Infrastructure.Fusion
             }
 
             _resultPublisher.TryPublish(Runner, _resultState);
+        }
+
+        private bool HasSpawnedState()
+        {
+            return FusionNetworkBehaviourLifecycle.IsSpawned(_replicatedState) && FusionNetworkBehaviourLifecycle.IsSpawned(_resultState);
         }
 
         private void PublishStateIfPhaseChanged(MatchPhase previousPhase, int connectedPlayerCount)

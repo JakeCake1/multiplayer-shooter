@@ -60,7 +60,7 @@ namespace Shooter.Bootstrap
 
         private void ObserveConfirmedShots(FusionServerWeapon weapon)
         {
-            if (!IsSpawned(weapon))
+            if (!FusionNetworkBehaviourLifecycle.IsSpawned(weapon))
             {
                 return;
             }

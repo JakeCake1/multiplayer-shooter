@@ -41,15 +41,17 @@ namespace Shooter.Bootstrap.Client
 
         private void FindMatchStateIfNeeded()
         {
-            if (_matchState == null)
+            if (FusionNetworkBehaviourLifecycle.IsSpawned(_matchState))
             {
-                _matchState = FindFirstObjectByType<FusionMatchState>();
+                return;
             }
+
+            _matchState = FindFirstObjectByType<FusionMatchState>();
         }
 
         private void ScheduleShutdownCountdownIfNeeded()
         {
-            if (_shutdownScheduled || !IsSpawned(_matchState) || _matchState.Phase != MatchPhase.Finished)
+            if (_shutdownScheduled || !FusionNetworkBehaviourLifecycle.IsSpawned(_matchState) || _matchState.Phase != MatchPhase.Finished)
             {
                 return;
             }

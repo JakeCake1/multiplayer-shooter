@@ -48,15 +48,17 @@ namespace Shooter.Infrastructure.Fusion
         private bool CanAcceptGameplayInput()
         {
             ResolveMatchState();
-            return _matchState != null && MatchPhaseRules.AcceptsGameplayInput(_matchState.Phase) && !_healthState.IsDead;
+            return FusionNetworkBehaviourLifecycle.IsSpawned(_matchState) && MatchPhaseRules.AcceptsGameplayInput(_matchState.Phase) && !_healthState.IsDead;
         }
 
         private void ResolveMatchState()
         {
-            if (_matchState == null)
+            if (FusionNetworkBehaviourLifecycle.IsSpawned(_matchState))
             {
-                _matchState = FindFirstObjectByType<FusionMatchState>();
+                return;
             }
+
+            _matchState = FindFirstObjectByType<FusionMatchState>();
         }
 
         private void SimulatePlayer(FusionPlayerInput input, PlayerLookRotation lookRotation, bool acceptsGameplayInput, bool jumpPressed)

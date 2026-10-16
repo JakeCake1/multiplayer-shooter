@@ -13,7 +13,7 @@ namespace Shooter.Bootstrap.Client
         public bool TryCreate(out ClientMatchSnapshot snapshot)
         {
             FindMatchStateIfNeeded();
-            if (_matchState == null || _matchState.Object == null)
+            if (!FusionNetworkBehaviourLifecycle.IsSpawned(_matchState))
             {
                 snapshot = null;
                 return false;
@@ -25,16 +25,18 @@ namespace Shooter.Bootstrap.Client
 
         private void FindMatchStateIfNeeded()
         {
-            if (_matchState == null)
+            if (FusionNetworkBehaviourLifecycle.IsSpawned(_matchState))
             {
-                _matchState = Object.FindFirstObjectByType<FusionMatchState>();
+                return;
             }
+
+            _matchState = Object.FindFirstObjectByType<FusionMatchState>();
         }
 
         private ClientMatchSnapshot CreateSnapshot()
         {
             var result = _matchState.GetComponent<FusionMatchResultState>();
-            if (_matchState.Phase == MatchPhase.Finished && result != null && result.HasResult)
+            if (_matchState.Phase == MatchPhase.Finished && FusionNetworkBehaviourLifecycle.IsSpawned(result) && result.HasResult)
             {
                 return CreateResultsSnapshot(result);
             }
@@ -65,6 +67,11 @@ namespace Shooter.Bootstrap.Client
             var localPlayerId = GetLocalPlayerId();
             for (var index = 0; index < _playerStates.Length; index++)
             {
+                if (!FusionNetworkBehaviourLifecycle.IsSpawned(_playerStates[index]))
+                {
+                    continue;
+                }
+
                 InsertPlayer(CreatePlayerSnapshot(_playerStates[index], localPlayerId), ref firstPlayer, ref secondPlayer);
             }
         }
@@ -86,7 +93,7 @@ namespace Shooter.Bootstrap.Client
 
             for (var index = 0; index < _playerStates.Length; index++)
             {
-                if (_playerStates[index] == null || _playerStates[index].Object == null)
+                if (!FusionNetworkBehaviourLifecycle.IsSpawned(_playerStates[index]))
                 {
                     return false;
                 }
@@ -101,9 +108,9 @@ namespace Shooter.Bootstrap.Client
             var scoreState = healthState.GetComponent<FusionPlayerScoreState>();
             var weapon = healthState.GetComponent<FusionServerWeapon>();
             var respawn = healthState.GetComponent<FusionServerPlayerRespawn>();
-            var kills = scoreState == null ? 0 : scoreState.Kills;
-            var confirmedHitCount = weapon == null ? 0 : weapon.ConfirmedHitCount;
-            var isRespawning = respawn != null && respawn.IsRespawning;
+            var kills = FusionNetworkBehaviourLifecycle.IsSpawned(scoreState) ? scoreState.Kills : 0;
+            var confirmedHitCount = FusionNetworkBehaviourLifecycle.IsSpawned(weapon) ? weapon.ConfirmedHitCount : 0;
+            var isRespawning = FusionNetworkBehaviourLifecycle.IsSpawned(respawn) && respawn.IsRespawning;
             var respawnSecondsRemaining = isRespawning ? Mathf.Max(0, Mathf.CeilToInt(respawn.SecondsRemaining)) : 0;
             return new ClientPlayerMatchSnapshot(playerId, kills, healthState.CurrentHealth, healthState.MaxHealth, playerId == localPlayerId, confirmedHitCount, isRespawning, respawnSecondsRemaining);
         }

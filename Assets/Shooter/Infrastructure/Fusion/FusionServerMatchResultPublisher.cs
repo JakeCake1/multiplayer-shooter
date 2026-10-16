@@ -24,6 +24,11 @@ namespace Shooter.Infrastructure.Fusion
                 throw new ArgumentNullException(nameof(resultState));
             }
 
+            if (!FusionNetworkBehaviourLifecycle.IsSpawned(resultState))
+            {
+                return false;
+            }
+
             if (resultState.HasResult)
             {
                 return true;
@@ -50,6 +55,11 @@ namespace Shooter.Infrastructure.Fusion
             if (resultState == null)
             {
                 throw new ArgumentNullException(nameof(resultState));
+            }
+
+            if (!FusionNetworkBehaviourLifecycle.IsSpawned(resultState))
+            {
+                return false;
             }
 
             if (forfeitingPlayerObject == null)
@@ -97,7 +107,7 @@ namespace Shooter.Infrastructure.Fusion
 
         private void CapturePlayerScore(PlayerRef player, NetworkObject playerObject)
         {
-            if (playerObject.TryGetComponent<FusionPlayerScoreState>(out var scoreState))
+            if (playerObject.TryGetComponent<FusionPlayerScoreState>(out var scoreState) && FusionNetworkBehaviourLifecycle.IsSpawned(scoreState))
             {
                 _scoresByPlayerId[player.PlayerId] = scoreState.Kills;
             }

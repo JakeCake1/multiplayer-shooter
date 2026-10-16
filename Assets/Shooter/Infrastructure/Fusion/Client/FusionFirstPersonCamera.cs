@@ -38,15 +38,17 @@ namespace Shooter.Infrastructure.Fusion
 
         private void ResolveMatchStateIfNeeded()
         {
-            if (_matchState == null)
+            if (FusionNetworkBehaviourLifecycle.IsSpawned(_matchState))
             {
-                _matchState = FindFirstObjectByType<FusionMatchState>();
+                return;
             }
+
+            _matchState = FindFirstObjectByType<FusionMatchState>();
         }
 
         private void ResolveAvatarIfNeeded()
         {
-            if (_avatar != null && _avatar.Object != null)
+            if (FusionNetworkBehaviourLifecycle.IsSpawned(_avatar))
             {
                 return;
             }
@@ -59,6 +61,12 @@ namespace Shooter.Infrastructure.Fusion
             }
 
             _avatar = playerObject.GetComponent<FusionPlayerAvatar>();
+            if (!FusionNetworkBehaviourLifecycle.IsSpawned(_avatar))
+            {
+                _avatar = null;
+                return;
+            }
+
             HideLocalRenderers();
         }
 
@@ -120,7 +128,7 @@ namespace Shooter.Infrastructure.Fusion
 
         private void UpdateCursorCapture()
         {
-            var gameplayActive = _matchState != null && MatchPhaseRules.AcceptsGameplayInput(_matchState.Phase);
+            var gameplayActive = FusionNetworkBehaviourLifecycle.IsSpawned(_matchState) && MatchPhaseRules.AcceptsGameplayInput(_matchState.Phase);
             if (!gameplayActive)
             {
                 _gameplayWasActive = false;

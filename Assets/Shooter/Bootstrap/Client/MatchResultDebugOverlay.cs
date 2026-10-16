@@ -13,15 +13,17 @@ namespace Shooter.Bootstrap
 
         private void Update()
         {
-            if (_resultState == null)
+            if (FusionNetworkBehaviourLifecycle.IsSpawned(_resultState))
             {
-                _resultState = FindFirstObjectByType<FusionMatchResultState>();
+                return;
             }
+
+            _resultState = FindFirstObjectByType<FusionMatchResultState>();
         }
 
         private void OnGUI()
         {
-            if (!IsSpawned(_resultState) || !_resultState.HasResult)
+            if (!FusionNetworkBehaviourLifecycle.IsSpawned(_resultState) || !_resultState.HasResult)
             {
                 return;
             }

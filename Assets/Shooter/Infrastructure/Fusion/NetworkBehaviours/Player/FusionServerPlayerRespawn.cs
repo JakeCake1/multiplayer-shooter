@@ -64,15 +64,17 @@ namespace Shooter.Infrastructure.Fusion
         private bool IsMatchPlaying()
         {
             ResolveMatchState();
-            return _matchState != null && MatchPhaseRules.AcceptsGameplayInput(_matchState.Phase);
+            return FusionNetworkBehaviourLifecycle.IsSpawned(_matchState) && MatchPhaseRules.AcceptsGameplayInput(_matchState.Phase);
         }
 
         private void ResolveMatchState()
         {
-            if (_matchState == null)
+            if (FusionNetworkBehaviourLifecycle.IsSpawned(_matchState))
             {
-                _matchState = FindFirstObjectByType<FusionMatchState>();
+                return;
             }
+
+            _matchState = FindFirstObjectByType<FusionMatchState>();
         }
 
         private void StartRespawn()
