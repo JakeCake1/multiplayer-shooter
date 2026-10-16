@@ -56,7 +56,7 @@ namespace Shooter.Infrastructure.PlayFab
                 return CreateFailureResult($"PlayFab failed to start matchmaking: {exception.Message}", exception);
             }
 
-            Debug.Log($"[PlayFab] Matchmaking ticket requested for queue '{_options.QueueName}'.");
+            LogTicketRequested();
             var completion = _activeCompletion;
             return await WaitForCompletionAsync(completion, cancellationToken);
         }
@@ -89,6 +89,13 @@ namespace Shooter.Infrastructure.PlayFab
             {
                 throw new InvalidOperationException("The SDK returned no matchmaking ticket.");
             }
+        }
+
+        private void LogTicketRequested()
+        {
+            var entityKeyResult = _playerSession.PlayerEntity.GetEntityKey();
+            var entityId = entityKeyResult.Failed() ? $"unavailable (HRESULT 0x{entityKeyResult.HResult:X8})" : entityKeyResult.Result.Id;
+            Debug.Log($"[PlayFab][Matchmaking] EntityId '{entityId}' requested ticket '{_activeTicket.TicketId}' for queue '{_options.QueueName}'.");
         }
 
         private void RegisterEvents()
