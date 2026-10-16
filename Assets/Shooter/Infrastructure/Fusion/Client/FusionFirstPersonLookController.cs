@@ -13,6 +13,7 @@ namespace Shooter.Infrastructure.Fusion
         private const float VisualSmoothTime = 0.035f;
         private NetworkRunner _runner;
         private IClientInputSettings _settings;
+        private PlayerGameplayConfiguration _configuration;
         private NetworkObject _lookSource;
         private float _targetYaw;
         private float _targetPitch;
@@ -25,10 +26,11 @@ namespace Shooter.Infrastructure.Fusion
 
         public Quaternion VisualLookRotation => Quaternion.Euler(_visualPitch, _visualYaw, 0f);
 
-        public void Configure(NetworkRunner runner, IClientInputSettings settings)
+        public void Configure(NetworkRunner runner, IClientInputSettings settings, PlayerGameplayConfiguration configuration)
         {
             _runner = runner;
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
         private void Update()
@@ -64,7 +66,7 @@ namespace Shooter.Infrastructure.Fusion
             var delta = Mouse.current.delta.ReadValue();
             var sensitivity = BaseDegreesPerPixel * _settings.MouseSensitivityMultiplier;
             _targetYaw = Mathf.Repeat(_targetYaw + delta.x * sensitivity, 360f);
-            _targetPitch = Mathf.Clamp(_targetPitch - delta.y * sensitivity, PlayerLookRules.MinimumPitch, PlayerLookRules.MaximumPitch);
+            _targetPitch = Mathf.Clamp(_targetPitch - delta.y * sensitivity, _configuration.MinimumLookPitch, _configuration.MaximumLookPitch);
         }
 
         private void SmoothVisualRotation()

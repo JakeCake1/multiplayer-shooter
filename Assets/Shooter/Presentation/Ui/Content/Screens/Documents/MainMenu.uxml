@@ -5,5 +5,6 @@
     <ui:Label text="Mouse sensitivity: 2.50x" name="sensitivity-value-label" style="align-self: center; margin-bottom: 4px;"/>
     <ui:Slider name="sensitivity-slider" low-value="0.25" high-value="5" value="2.5" style="align-self: center; width: 200px; margin-bottom: 20px;"/>
     <ui:Button text="Find Game" name="find-game-button" style="background-color: rgb(99, 192, 249); align-content: center; align-self: center; justify-content: center; align-items: center; width: 200px;"/>
+    <ui:Button text="Retry Authentication" name="retry-authentication-button" style="display: none; background-color: rgb(99, 192, 249); align-content: center; align-self: center; justify-content: center; align-items: center; width: 200px;"/>
     <ui:Button text="Exit" name="exit-button" style="align-content: center; align-self: center; justify-content: space-evenly; align-items: center; width: 200px;"/>
 </ui:UXML>

@@ -13,22 +13,41 @@ namespace Shooter.Presentation.Tests
             var inputSettings = new StubClientInputSettings();
             var factory = CreateFactory(controller, inputSettings);
 
-            var request = factory.Create(new ClientFlowSnapshot(ClientFlowState.Menu, "offline"));
+            var request = factory.Create(new ClientFlowSnapshot(ClientFlowState.Menu, "offline", isAuthenticationReady: false));
             var viewModel = request.ViewModel as MainMenuViewModel;
 
             Assert.That(request.Address, Is.EqualTo(ClientUiScreenAddresses.MainMenu));
             Assert.That(viewModel, Is.Not.Null);
             Assert.That(viewModel.Problem, Is.EqualTo("offline"));
+            Assert.That(viewModel.IsAuthenticationReady, Is.False);
+            Assert.That(viewModel.CanFindGame, Is.False);
             Assert.That(viewModel.MouseSensitivity, Is.EqualTo(2.5f));
             viewModel.SetMouseSensitivity(3f);
+            viewModel.RetryAuthenticationAsync().GetAwaiter().GetResult();
             Assert.That(inputSettings.MouseSensitivityMultiplier, Is.EqualTo(3f));
+            Assert.That(controller.RetryAuthenticationRequestCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AuthenticatedMenuEnablesFindingGame()
+        {
+            var controller = new StubClientFlowController();
+            var factory = CreateFactory(controller);
+            var request = factory.Create(new ClientFlowSnapshot(ClientFlowState.Menu, isAuthenticationReady: true, canFindGame: true));
+            var viewModel = request.ViewModel as MainMenuViewModel;
+
+            viewModel.FindGameAsync().GetAwaiter().GetResult();
+
+            Assert.That(viewModel.IsAuthenticationReady, Is.True);
+            Assert.That(viewModel.CanFindGame, Is.True);
+            Assert.That(controller.FindGameRequestCount, Is.EqualTo(1));
         }
 
         [Test]
         public void PlayingUsesLiveMatchHud()
         {
             var factory = CreateFactory(new StubClientFlowController());
-            var firstPlayer = new ClientPlayerMatchSnapshot(1, 2, 75, 100, true);
+            var firstPlayer = new ClientPlayerMatchSnapshot(1, 2, 75, 100, true, 3, true, 4);
             var secondPlayer = new ClientPlayerMatchSnapshot(2, 1, 40, 100);
             var match = new ClientMatchSnapshot(ClientMatchStage.Playing, 2, 65f, firstPlayer, secondPlayer);
 
@@ -39,6 +58,8 @@ namespace Shooter.Presentation.Tests
             Assert.That(viewModel.TimeRemaining, Is.EqualTo("01:05"));
             Assert.That(viewModel.FirstPlayer, Is.EqualTo("You (Player 1)   HP 75/100   Kills 2"));
             Assert.That(viewModel.SecondPlayer, Is.EqualTo("Player 2   HP 40/100   Kills 1"));
+            Assert.That(viewModel.LocalConfirmedHitCount, Is.EqualTo(3));
+            Assert.That(viewModel.LocalRespawnStatus, Is.EqualTo("Respawning in 4"));
         }
 
         [TestCase(ClientFlowState.Booting, "Preparing player authentication...")]
@@ -53,6 +74,20 @@ namespace Shooter.Presentation.Tests
 
             Assert.That(request.Address, Is.EqualTo(ClientUiScreenAddresses.Connecting));
             Assert.That(viewModel.Status, Is.EqualTo(status));
+            Assert.That(viewModel.CanCancel, Is.EqualTo(state == ClientFlowState.Searching));
+        }
+
+        [Test]
+        public void SearchingCancelRequestsFlowCancellation()
+        {
+            var controller = new StubClientFlowController();
+            var factory = CreateFactory(controller);
+            var request = factory.Create(new ClientFlowSnapshot(ClientFlowState.Searching));
+            var viewModel = request.ViewModel as ConnectingViewModel;
+
+            viewModel.RequestCancel();
+
+            Assert.That(controller.CancelSearchRequestCount, Is.EqualTo(1));
         }
 
         [Test]
@@ -94,7 +129,7 @@ namespace Shooter.Presentation.Tests
 
         private static ClientFlowScreenFactory CreateFactory(StubClientFlowController controller, StubClientInputSettings inputSettings)
         {
-            var providers = new IClientFlowScreenProvider[] { new BootingClientFlowScreenProvider(), new MenuClientFlowScreenProvider(controller, inputSettings), new SearchingClientFlowScreenProvider(), new ConnectingClientFlowScreenProvider(), new WaitingForPlayersClientFlowScreenProvider(), new PlayingClientFlowScreenProvider(), new ResultsClientFlowScreenProvider(controller) };
+            var providers = new IClientFlowScreenProvider[] { new BootingClientFlowScreenProvider(), new MenuClientFlowScreenProvider(controller, inputSettings), new SearchingClientFlowScreenProvider(controller), new ConnectingClientFlowScreenProvider(), new WaitingForPlayersClientFlowScreenProvider(), new PlayingClientFlowScreenProvider(), new ResultsClientFlowScreenProvider(controller) };
             return new ClientFlowScreenFactory(providers);
         }
     }

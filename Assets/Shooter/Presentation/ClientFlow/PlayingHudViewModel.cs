@@ -4,11 +4,13 @@ namespace Shooter.Presentation.ClientFlow
 {
     public sealed class PlayingHudViewModel : IUiViewModel
     {
-        public PlayingHudViewModel(string timeRemaining, string firstPlayer, string secondPlayer)
+        public PlayingHudViewModel(string timeRemaining, string firstPlayer, string secondPlayer, int localConfirmedHitCount = 0, string localRespawnStatus = null)
         {
             TimeRemaining = timeRemaining ?? string.Empty;
             FirstPlayer = firstPlayer ?? string.Empty;
             SecondPlayer = secondPlayer ?? string.Empty;
+            LocalConfirmedHitCount = localConfirmedHitCount;
+            LocalRespawnStatus = localRespawnStatus ?? string.Empty;
         }
 
         public string TimeRemaining { get; }
@@ -16,5 +18,9 @@ namespace Shooter.Presentation.ClientFlow
         public string FirstPlayer { get; }
 
         public string SecondPlayer { get; }
+
+        public int LocalConfirmedHitCount { get; }
+
+        public string LocalRespawnStatus { get; }
     }
 }

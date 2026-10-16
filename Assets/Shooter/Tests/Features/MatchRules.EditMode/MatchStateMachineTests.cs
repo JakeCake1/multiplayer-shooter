@@ -74,5 +74,33 @@ namespace Shooter.Features.MatchRules.Tests
 
             Assert.That(machine.Phase, Is.EqualTo(MatchPhase.Finished));
         }
+
+        [Test]
+        public void PlayingMatchCanBeginFinishingEarly()
+        {
+            var machine = new MatchStateMachine(CreateRules());
+            machine.Advance(connectedPlayerCount: 2, deltaSeconds: 0f);
+            machine.Advance(connectedPlayerCount: 2, deltaSeconds: 3f);
+
+            var beganFinishing = machine.TryBeginFinishing();
+
+            Assert.That(beganFinishing, Is.True);
+            Assert.That(machine.Phase, Is.EqualTo(MatchPhase.Finishing));
+            Assert.That(machine.SecondsRemaining, Is.EqualTo(1f));
+            Assert.That(machine.TryBeginFinishing(), Is.False);
+        }
+
+        [Test]
+        public void ResetReturnsFinishedMatchToWaiting()
+        {
+            var machine = new MatchStateMachine(CreateRules());
+            machine.Advance(connectedPlayerCount: 2, deltaSeconds: 0f);
+            machine.Advance(connectedPlayerCount: 2, deltaSeconds: 64f);
+
+            machine.Reset();
+
+            Assert.That(machine.Phase, Is.EqualTo(MatchPhase.WaitingForPlayers));
+            Assert.That(machine.SecondsRemaining, Is.Zero);
+        }
     }
 }

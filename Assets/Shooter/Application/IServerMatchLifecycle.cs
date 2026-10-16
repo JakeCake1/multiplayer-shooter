@@ -7,5 +7,7 @@ namespace Shooter.Application
         event Action MatchFinished;
 
         void ReportMatchFinished();
+
+        void PrepareNextMatch();
     }
 }

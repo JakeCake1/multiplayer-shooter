@@ -9,11 +9,18 @@ namespace Shooter.Application.Tests
 
         public int CallCount { get; private set; }
 
-        public Task<MatchmakingResult> FindMatchAsync(CancellationToken cancellationToken)
+        public bool WaitForCancellation { get; set; }
+
+        public async Task<MatchmakingResult> FindMatchAsync(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             CallCount++;
-            return Task.FromResult(Result);
+            if (WaitForCancellation)
+            {
+                await Task.Delay(Timeout.Infinite, cancellationToken);
+            }
+
+            return Result;
         }
     }
 }

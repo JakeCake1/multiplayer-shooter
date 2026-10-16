@@ -9,29 +9,34 @@ namespace Shooter.Infrastructure.Fusion
     public sealed class FusionClientNetworkSession : FusionNetworkSessionBase
     {
         private readonly FusionNetworkAssetLoader _assetLoader;
+        private readonly FusionArenaLoader _arenaLoader;
         private readonly IClientInputSettings _inputSettings;
+        private readonly MatchConfiguration _configuration;
 
-        public FusionClientNetworkSession(FusionNetworkAssetLoader assetLoader, IClientInputSettings inputSettings)
+        public FusionClientNetworkSession(FusionNetworkAssetLoader assetLoader, FusionArenaLoader arenaLoader, IClientInputSettings inputSettings, MatchConfiguration configuration)
         {
             _assetLoader = assetLoader ?? throw new ArgumentNullException(nameof(assetLoader));
+            _arenaLoader = arenaLoader ?? throw new ArgumentNullException(nameof(arenaLoader));
             _inputSettings = inputSettings ?? throw new ArgumentNullException(nameof(inputSettings));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
         protected override NetworkSessionRole Role => NetworkSessionRole.Client;
 
         protected override async Task PrepareAsync()
         {
-            await _assetLoader.LoadAsync();
+            await Task.WhenAll(_assetLoader.LoadAsync(), _arenaLoader.LoadAsync());
         }
 
         protected override NetworkRunner CreateRunner()
         {
             var runner = CreateRunnerBase();
+            runner.gameObject.AddComponent<FusionMatchConfigurationSource>().Configure(_configuration);
             runner.ProvideInput = true;
             var events = runner.gameObject.AddComponent<NetworkEvents>();
             events.OnInput ??= new NetworkEvents.InputEvent();
             var lookController = runner.gameObject.AddComponent<FusionFirstPersonLookController>();
-            lookController.Configure(runner, _inputSettings);
+            lookController.Configure(runner, _inputSettings, _configuration.Player);
             var inputCollector = new FusionClientInputCollector(lookController);
             events.OnInput.AddListener(inputCollector.Collect);
             var firstPersonCamera = runner.gameObject.AddComponent<FusionFirstPersonCamera>();

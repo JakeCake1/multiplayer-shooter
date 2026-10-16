@@ -20,6 +20,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7d8b2a9479fdf6a45a595dd343e309d3
+    m_Address: content/arena
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a3c9b3ee863803f44b4d11c2e569900c
     m_Address: Shooter/Network/Player
     m_ReadOnly: 0

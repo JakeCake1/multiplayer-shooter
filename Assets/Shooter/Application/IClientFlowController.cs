@@ -11,7 +11,11 @@ namespace Shooter.Application
 
         Task InitializeAsync();
 
+        Task RetryAuthenticationAsync();
+
         Task FindGameAsync();
+
+        void CancelSearch();
 
         void ObserveMatch(ClientMatchSnapshot snapshot);
 

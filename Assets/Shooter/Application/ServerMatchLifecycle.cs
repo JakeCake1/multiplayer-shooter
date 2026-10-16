@@ -18,5 +18,10 @@ namespace Shooter.Application
             _matchFinishedReported = true;
             MatchFinished?.Invoke();
         }
+
+        public void PrepareNextMatch()
+        {
+            _matchFinishedReported = false;
+        }
     }
 }

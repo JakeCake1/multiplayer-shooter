@@ -6,12 +6,13 @@ using UnityEngine;
 namespace Shooter.Infrastructure.Fusion
 {
     [RequireComponent(typeof(NetworkObject))]
+    [RequireComponent(typeof(NetworkCharacterController))]
     [RequireComponent(typeof(FusionPlayerHealthState))]
     public sealed class FusionServerPlayerRespawn : NetworkBehaviour
     {
-        private const float RespawnDelaySeconds = 7f;
-        private static readonly PlayerRespawnRules Rules = new PlayerRespawnRules(RespawnDelaySeconds);
+        private PlayerRespawnRules _rules;
         private FusionPlayerHealthState _healthState;
+        private NetworkCharacterController _characterController;
         private FusionMatchState _matchState;
         private Vector3 _spawnPosition;
 
@@ -28,6 +29,7 @@ namespace Shooter.Infrastructure.Fusion
 
         public override void Spawned()
         {
+            _rules = new PlayerRespawnRules(FusionMatchConfigurationResolver.Resolve(Runner).Player.RespawnDelaySeconds);
             enabled = Object.HasStateAuthority;
             if (!enabled)
             {
@@ -35,6 +37,7 @@ namespace Shooter.Infrastructure.Fusion
             }
 
             _healthState = GetComponent<FusionPlayerHealthState>();
+            _characterController = GetComponent<NetworkCharacterController>();
             _spawnPosition = transform.position;
         }
 
@@ -61,22 +64,24 @@ namespace Shooter.Infrastructure.Fusion
         private bool IsMatchPlaying()
         {
             ResolveMatchState();
-            return _matchState != null && MatchPhaseRules.AcceptsGameplayInput(_matchState.Phase);
+            return FusionNetworkBehaviourLifecycle.IsSpawned(_matchState) && MatchPhaseRules.AcceptsGameplayInput(_matchState.Phase);
         }
 
         private void ResolveMatchState()
         {
-            if (_matchState == null)
+            if (FusionNetworkBehaviourLifecycle.IsSpawned(_matchState))
             {
-                _matchState = FindFirstObjectByType<FusionMatchState>();
+                return;
             }
+
+            _matchState = FindFirstObjectByType<FusionMatchState>();
         }
 
         private void StartRespawn()
         {
             IsRespawning = true;
-            RespawnTimer = TickTimer.CreateFromSeconds(Runner, Rules.DelaySeconds);
-            Debug.Log($"[Respawn][Server] Player {Object.InputAuthority} will respawn in {Rules.DelaySeconds:0.0}s.");
+            RespawnTimer = TickTimer.CreateFromSeconds(Runner, _rules.DelaySeconds);
+            Debug.Log($"[Respawn][Server] Player {Object.InputAuthority} will respawn in {_rules.DelaySeconds:0.0}s.");
         }
 
         private void CompleteRespawnIfReady()
@@ -86,7 +91,8 @@ namespace Shooter.Infrastructure.Fusion
                 return;
             }
 
-            transform.position = _spawnPosition;
+            _characterController.Teleport(_spawnPosition);
+            _characterController.Velocity = Vector3.zero;
             _healthState.RestoreFullHealth();
             RespawnCount++;
             IsRespawning = false;

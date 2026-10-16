@@ -8,9 +8,13 @@ namespace Shooter.Presentation.Tests
     {
         public event Action<ClientFlowSnapshot> Changed;
 
-        public ClientFlowSnapshot Current { get; private set; } = new ClientFlowSnapshot(ClientFlowState.Menu);
+        public ClientFlowSnapshot Current { get; private set; } = new ClientFlowSnapshot(ClientFlowState.Menu, isAuthenticationReady: true, canFindGame: true);
 
         public int FindGameRequestCount { get; private set; }
+
+        public int RetryAuthenticationRequestCount { get; private set; }
+
+        public int CancelSearchRequestCount { get; private set; }
 
         public bool ExitRequested { get; private set; }
 
@@ -23,6 +27,17 @@ namespace Shooter.Presentation.Tests
         {
             FindGameRequestCount++;
             return Task.CompletedTask;
+        }
+
+        public Task RetryAuthenticationAsync()
+        {
+            RetryAuthenticationRequestCount++;
+            return Task.CompletedTask;
+        }
+
+        public void CancelSearch()
+        {
+            CancelSearchRequestCount++;
         }
 
         public void ObserveMatch(ClientMatchSnapshot snapshot)

@@ -1,5 +1,4 @@
 using System;
-using Shooter.Application;
 using Shooter.Features.MatchRules;
 using Shooter.Infrastructure.Fusion;
 using UnityEngine;
@@ -14,6 +13,12 @@ namespace Shooter.Bootstrap.Client
         private FusionMatchState _matchState;
         private bool _shutdownScheduled;
         private float _shutdownAt;
+        private float _shutdownGraceSeconds;
+
+        public void Configure(float shutdownGraceSeconds)
+        {
+            _shutdownGraceSeconds = shutdownGraceSeconds >= 0f ? shutdownGraceSeconds : throw new ArgumentOutOfRangeException(nameof(shutdownGraceSeconds));
+        }
 
         private void Awake()
         {
@@ -41,21 +46,23 @@ namespace Shooter.Bootstrap.Client
 
         private void FindMatchStateIfNeeded()
         {
-            if (_matchState == null)
+            if (FusionNetworkBehaviourLifecycle.IsSpawned(_matchState))
             {
-                _matchState = FindFirstObjectByType<FusionMatchState>();
+                return;
             }
+
+            _matchState = FindFirstObjectByType<FusionMatchState>();
         }
 
         private void ScheduleShutdownCountdownIfNeeded()
         {
-            if (_shutdownScheduled || !IsSpawned(_matchState) || _matchState.Phase != MatchPhase.Finished)
+            if (_shutdownScheduled || !FusionNetworkBehaviourLifecycle.IsSpawned(_matchState) || _matchState.Phase != MatchPhase.Finished)
             {
                 return;
             }
 
             _shutdownScheduled = true;
-            _shutdownAt = Time.realtimeSinceStartup + ServerProcessShutdownPolicy.DefaultMatchFinishedGracePeriodSeconds;
+            _shutdownAt = Time.realtimeSinceStartup + _shutdownGraceSeconds;
         }
     }
 }

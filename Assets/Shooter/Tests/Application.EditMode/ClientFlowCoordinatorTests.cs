@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using NUnit.Framework;
 
@@ -22,6 +23,8 @@ namespace Shooter.Application.Tests
 
             Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
             Assert.That(coordinator.Current.Problem, Is.Empty);
+            Assert.That(coordinator.Current.IsAuthenticationReady, Is.True);
+            Assert.That(coordinator.Current.CanFindGame, Is.True);
         }
 
         [Test]
@@ -34,6 +37,29 @@ namespace Shooter.Application.Tests
 
             Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
             Assert.That(coordinator.Current.Problem, Does.Contain("authentication offline"));
+            Assert.That(coordinator.Current.IsAuthenticationReady, Is.False);
+            Assert.That(coordinator.Current.CanFindGame, Is.False);
+        }
+
+        [Test]
+        public async Task AuthenticationFailureRequiresExplicitRetryBeforeFindingGame()
+        {
+            var authentication = new FakeAuthenticationService { Result = AuthenticationResult.Failure("authentication offline") };
+            var matchmaking = new FakeMatchmakingService();
+            var coordinator = CreateCoordinator(new FakeNetworkSession(), authentication, matchmaking);
+            await coordinator.InitializeAsync();
+
+            await coordinator.FindGameAsync();
+            Assert.That(matchmaking.CallCount, Is.Zero);
+
+            authentication.Result = AuthenticationResult.Success("test-player");
+            await coordinator.RetryAuthenticationAsync();
+
+            Assert.That(authentication.CallCount, Is.EqualTo(2));
+            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
+            Assert.That(coordinator.Current.IsAuthenticationReady, Is.True);
+            Assert.That(coordinator.Current.CanFindGame, Is.True);
+            Assert.That(coordinator.Current.Problem, Is.Empty);
         }
 
         [Test]
@@ -68,6 +94,26 @@ namespace Shooter.Application.Tests
         }
 
         [Test]
+        public async Task CancelSearchReturnsToMenuWithoutStartingNetwork()
+        {
+            var matchmaking = new FakeMatchmakingService { WaitForCancellation = true };
+            var session = new FakeNetworkSession();
+            var coordinator = CreateCoordinator(session, matchmakingService: matchmaking);
+            await coordinator.InitializeAsync();
+            var findGame = coordinator.FindGameAsync();
+            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Searching));
+
+            coordinator.CancelSearch();
+            await findGame;
+
+            Assert.That(session.StartCount, Is.Zero);
+            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
+            Assert.That(coordinator.Current.Problem, Is.Empty);
+            Assert.That(coordinator.Current.IsAuthenticationReady, Is.True);
+            Assert.That(coordinator.Current.CanFindGame, Is.True);
+        }
+
+        [Test]
         public async Task FailedConnectionReturnsToMenuWithProblem()
         {
             var session = new FakeNetworkSession { StartResult = NetworkSessionStartResult.Failure(NetworkSessionError.ConnectionFailed, "offline") };
@@ -78,6 +124,30 @@ namespace Shooter.Application.Tests
 
             Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
             Assert.That(coordinator.Current.Problem, Does.Contain("offline"));
+        }
+
+        [Test]
+        public async Task ConnectionTimeoutStopsPendingSessionAndReturnsToMenu()
+        {
+            var session = new FakeNetworkSession { WaitForStartCompletion = true };
+            var timeoutPolicy = new ClientFlowTimeoutPolicy(TimeSpan.FromSeconds(1d), TimeSpan.FromMilliseconds(1d));
+            var coordinator = CreateCoordinator(session, timeoutPolicy: timeoutPolicy);
+            await coordinator.InitializeAsync();
+
+            await coordinator.FindGameAsync();
+
+            Assert.That(session.StartCount, Is.EqualTo(1));
+            Assert.That(session.StopCount, Is.EqualTo(1));
+            Assert.That(session.State, Is.EqualTo(NetworkSessionState.Disconnected));
+            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
+            Assert.That(coordinator.Current.Problem, Does.Contain("connection timed out"));
+            Assert.That(coordinator.Current.CanFindGame, Is.True);
+
+            session.CompleteStart();
+            await Task.Yield();
+
+            Assert.That(session.State, Is.EqualTo(NetworkSessionState.Disconnected));
+            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
         }
 
         [Test]
@@ -109,22 +179,72 @@ namespace Shooter.Application.Tests
             Assert.That(session.StopCount, Is.EqualTo(1));
             Assert.That(session.StartCount, Is.EqualTo(2));
             Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.WaitingForPlayers));
+            Assert.That(coordinator.Current.Problem, Is.Empty);
+        }
+
+        [Test]
+        public async Task FindGameAgainCleanupTimeoutReturnsToMenuWithoutStartingMatchmaking()
+        {
+            var matchmaking = new FakeMatchmakingService();
+            var session = new FakeNetworkSession();
+            var timeoutPolicy = new ClientFlowTimeoutPolicy(TimeSpan.FromMilliseconds(1d));
+            var coordinator = CreateCoordinator(session, matchmakingService: matchmaking, timeoutPolicy: timeoutPolicy);
+            await coordinator.InitializeAsync();
+            await coordinator.FindGameAsync();
+            coordinator.ObserveMatch(new ClientMatchSnapshot(ClientMatchStage.Results, 2, 0f));
+            session.WaitForStopCompletion = true;
+
+            await coordinator.FindGameAsync();
+
+            Assert.That(session.StopCount, Is.EqualTo(1));
+            Assert.That(session.StartCount, Is.EqualTo(1));
+            Assert.That(matchmaking.CallCount, Is.EqualTo(1));
+            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
+            Assert.That(coordinator.Current.Problem, Does.Contain("cleanup timed out"));
+            Assert.That(coordinator.Current.CanFindGame, Is.False);
+
+            session.CompleteStop();
+            await Task.Yield();
+
+            Assert.That(coordinator.Current.Problem, Is.Empty);
+            Assert.That(coordinator.Current.CanFindGame, Is.True);
+        }
+
+        [Test]
+        public async Task FindGameAgainCleanupFailureReturnsToMenuWithoutStartingMatchmaking()
+        {
+            var matchmaking = new FakeMatchmakingService();
+            var session = new FakeNetworkSession();
+            var coordinator = CreateCoordinator(session, matchmakingService: matchmaking);
+            await coordinator.InitializeAsync();
+            await coordinator.FindGameAsync();
+            coordinator.ObserveMatch(new ClientMatchSnapshot(ClientMatchStage.Results, 2, 0f));
+            session.StopException = new InvalidOperationException("stop failed");
+
+            await coordinator.FindGameAsync();
+
+            Assert.That(session.StopCount, Is.EqualTo(1));
+            Assert.That(session.StartCount, Is.EqualTo(1));
+            Assert.That(matchmaking.CallCount, Is.EqualTo(1));
+            Assert.That(coordinator.Current.State, Is.EqualTo(ClientFlowState.Menu));
+            Assert.That(coordinator.Current.Problem, Does.Contain("stop failed"));
+            Assert.That(coordinator.Current.CanFindGame, Is.False);
         }
 
         [Test]
         public void ExitUsesPlatformCapability()
         {
             var quitter = new FakeApplicationQuitter();
-            var coordinator = new ClientFlowCoordinator(new FakeAuthenticationService(), new FakeMatchmakingService(), new FakeNetworkSession(), quitter);
+            var coordinator = new ClientFlowCoordinator(new FakeAuthenticationService(), new FakeMatchmakingService(), new FakeNetworkSession(), quitter, new ClientFlowTimeoutPolicy());
 
             coordinator.Exit();
 
             Assert.That(quitter.WasRequested, Is.True);
         }
 
-        private static ClientFlowCoordinator CreateCoordinator(FakeNetworkSession session, FakeAuthenticationService authenticationService = null, FakeMatchmakingService matchmakingService = null)
+        private static ClientFlowCoordinator CreateCoordinator(FakeNetworkSession session, FakeAuthenticationService authenticationService = null, FakeMatchmakingService matchmakingService = null, ClientFlowTimeoutPolicy timeoutPolicy = null)
         {
-            return new ClientFlowCoordinator(authenticationService ?? new FakeAuthenticationService(), matchmakingService ?? new FakeMatchmakingService(), session, new FakeApplicationQuitter());
+            return new ClientFlowCoordinator(authenticationService ?? new FakeAuthenticationService(), matchmakingService ?? new FakeMatchmakingService(), session, new FakeApplicationQuitter(), timeoutPolicy ?? new ClientFlowTimeoutPolicy());
         }
     }
 }

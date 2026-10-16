@@ -12,7 +12,7 @@ Dedicated Server + Client A + Client B
     -> input-authority client predicts movement
     -> dedicated server validates automatic fire cadence
     -> server owns authoritative state
-    -> NetworkTransform replicates and reconciles movement
+    -> NetworkCharacterController predicts, collides, and reconciles movement
 ```
 
 ## Build
@@ -46,7 +46,9 @@ Builds/Local/Server/ShooterServer.exe
 
 Both outputs are Development builds with Script Debugging enabled, so Rider can attach to either `ShooterClient` process or the `ShooterServer` process. The server build uses Unity's `StandaloneBuildSubtarget.Server`; it is not a headless client build.
 
-The build also rebuilds Addressables content. `Player` and `MatchState` are loaded by address at runtime and are no longer serialized into the bootstrap scenes.
+The build also rebuilds Addressables content. `Player`, `MatchState`, and the shared collision arena are loaded by address at runtime and are no longer serialized into the bootstrap scenes.
+
+Match balance and lifecycle values are stored in `Assets/Shooter/Configuration/MatchConfiguration.json`. Both client and server load this Addressable once during bootstrap, before Fusion starts. After changing it, rebuild Addressables or rebuild the players so every process receives the same configuration; changing the source file does not hot-reload a running match.
 
 In Rider, use `Run > Attach to Unity Process` and select the exact PID printed by the local launcher.
 
@@ -72,7 +74,7 @@ The script launches the server first and waits until its log reports `Network: C
 .\RunLocalMatch.ps1 -PlayFabTitleId ABCDE -SessionName test-2 -Port 28000 -ServerReadyTimeoutSeconds 120
 ```
 
-Each client authenticates through the PlayFab Unified SDK before opening the local main menu. The launcher supplies distinct development-only Custom IDs, `client-a` and `client-b`, so PlayFab creates or resolves two different players. Select `Find Game` in both client windows to connect them to the session started by the script. Matchmaking is still the local adapter in this slice; the screen then follows the authoritative lifecycle through connecting, waiting/countdown, play, and results, while `Find Game Again` disconnects the completed Fusion session before reconnecting.
+Each client authenticates through the PlayFab Unified SDK before opening the local main menu. The launcher supplies distinct development-only Custom IDs, `client-a` and `client-b`, so PlayFab creates or resolves two different players. Select `Find Game` in both client windows to connect them to the session started by the script. Matchmaking is still the local adapter in this slice; the screen then follows the authoritative lifecycle through connecting, waiting/countdown, play, and results, while `Find Game Again` disconnects the completed Fusion session before reconnecting. A connection attempt that exceeds 30 seconds is stopped and returns to the menu with a recoverable problem. If completed-session cleanup takes longer than ten seconds, the menu reports the timeout and keeps Find Game unavailable until Fusion confirms disconnection, preventing an overlapping session or matchmaking request.
 
 The local launcher intentionally does not pass `--shooter-playfab-matchmaking-queue`, so it keeps using the local matchmaking adapter. To exercise the PlayFab ticket lifecycle, launch a Development client with an existing queue name:
 
@@ -80,7 +82,7 @@ The local launcher intentionally does not pass `--shooter-playfab-matchmaking-qu
 .\Builds\Local\Client\ShooterClient.exe --shooter-playfab-title-id ABCDE --shooter-player-id client-a --shooter-playfab-matchmaking-queue quick-1v1
 ```
 
-That queue must have a minimum and maximum match size of two and PlayFab Multiplayer Server allocation enabled. Add a Region Selection Rule whose path is `Latencies`; before creating a ticket, the client requests the title's deployed QoS regions, measures their UDP round-trip time on port 3075, and sends the results in the ticket's `Latencies` attribute. Measurements are written with a `[PlayFab][QoS]` prefix. The client processes ticket state changes every 100 milliseconds only while the ticket is active and uses the resulting `MatchId` as the Fusion session name. Ticket status, allocation endpoint, region, and selected Fusion session are written with a `[PlayFab]` prefix. The existing Searching and failure screens provide client-visible confirmation, so this backend slice does not add a separate debug overlay.
+That queue must have a minimum and maximum match size of two and PlayFab Multiplayer Server allocation enabled. Add a Region Selection Rule whose path is `Latencies`; before creating a ticket, the client requests the title's deployed QoS regions, measures their UDP round-trip time on port 3075, and sends the results in the ticket's `Latencies` attribute. Measurements are written with a `[PlayFab][QoS]` prefix. The client processes ticket state changes every 100 milliseconds only while the ticket is active and uses the resulting `MatchId` as the Fusion session name. Ticket status, allocation endpoint, region, and selected Fusion session are written with a `[PlayFab]` prefix. The SDK ticket timeout defaults to 120 seconds; a client watchdog waits ten additional seconds for the completion callback, then cancels the ticket and returns a recoverable timeout problem to `Menu`. During `Searching`, Cancel invalidates the current flow attempt, deletes the active PlayFab ticket through cancellation, and returns the client to `Menu` without an error. The existing Searching and failure screens provide client-visible confirmation, so this backend slice does not add a separate debug overlay.
 
 ## PlayFab Multiplayer Server build
 
@@ -94,7 +96,7 @@ ShooterServer.exe -batchmode -nographics -logFile -
 
 The server starts the GSDK heartbeat, enters `StandingBy`, and waits for PlayFab allocation. When the Agent activates it, the server reads the GSDK `SessionId` and assigned `serverListeningPort`, then starts the Fusion Server session using those values. A GSDK termination callback gracefully stops Fusion before quitting the process. After the authoritative match reaches `Finished`, a PlayFab server keeps the results session alive for ten seconds, gracefully stops Fusion, and exits so the allocated server can be recycled. Local dedicated servers intentionally remain alive for `Find Game Again`. Development clients launched with a PlayFab matchmaking queue show the approximate remaining shutdown grace period in the debug overlay. The build pipeline temporarily allows the GSDK's local HTTP Agent transport only while producing a dedicated-server build and restores the project setting afterward; client builds retain the project's normal HTTP policy.
 
-The match uses first-person controls. Use `W`, `A`, `S`, and `D` to move relative to the camera, `Space` to jump, the mouse to look, and the left mouse button to fire the automatic weapon. Mouse sensitivity is configured in the main menu from `0.25x` to `5.00x`, defaults to `2.50x`, and is persisted locally. The cursor locks when `Playing` begins; press `Escape` to release it and click the game view to capture it again. Movement, look, and jump are predicted by the owning client and reconciled against the dedicated server. The dedicated server sanitizes yaw/pitch, derives the three-dimensional shot direction, confirms shots only during `Playing`, resolves the raycast, applies damage, and writes the result with a `[Weapon][Server]` prefix.
+The match uses first-person controls. Use `W`, `A`, `S`, and `D` to move relative to the camera, `Space` to jump, the mouse to look, and the left mouse button to fire the automatic weapon. Mouse sensitivity is configured in the main menu from `0.25x` to `5.00x`, defaults to `2.50x`, and is persisted locally. The cursor locks when `Playing` begins; press `Escape` to release it and click the game view to capture it again. Fusion's `NetworkCharacterController` predicts movement, jumping, and collision for the owning client and reconciles them against the dedicated server. Both roles load the same Addressable arena before starting the network runner, so the ground, perimeter walls, and cover participate in identical simulation geometry. The dedicated server sanitizes yaw/pitch, derives the three-dimensional shot direction, confirms shots only during `Playing`, resolves the raycast, applies damage, and writes the result with a `[Weapon][Server]` prefix.
 
 After launch, PowerShell prints a process table with role, PID, session, server port, and log path. Logs are separated into:
 
@@ -104,7 +106,9 @@ Builds/Local/Logs/client-a.log
 Builds/Local/Logs/client-b.log
 ```
 
-During `Playing`, the client loads the production HUD through Addressables. It shows the authoritative time remaining plus health and kills for both players; the local row is marked `You`, and the two rows use distinct blue and orange accents. Development clients additionally show role, PID, session, port applicability, current network state, replicated match phase, connected player count, phase time remaining, recently active authoritative shot counters, active respawn countdowns, and the final match result in the upper-left corner. A player's shot counter appears when its replicated total increases and disappears after five seconds without another confirmed shot. Its world-space ray disappears one second after the last confirmed fire input. A miss draws the full configured range; a collision ends at the server raycast point. Each player uses the same distinct color for its ray, shot counter, and result row. Health remains visible in the production HUD while the replicated player object exists. At zero health, movement and firing stop; during `Playing`, the server restores the player at its original spawn point after three seconds. When `Playing` ends, the server snapshots both scores and publishes the winner or draw independently of the player objects. The dedicated server writes process information with a `[LocalProcess]` prefix to its log and the final result with a `[MatchResult][Server]` prefix.
+During `Playing`, the client loads the production HUD through Addressables. It shows the authoritative time remaining plus health and kills for both players; the local row is marked `You`, and the two rows use distinct blue and orange accents. A gold hit marker flashes over the crosshair for 150 milliseconds whenever the server increases the local player's replicated confirmed-hit counter. While the local player is dead, a centered production status shows the authoritative respawn countdown rounded up to whole seconds. Development clients additionally show role, PID, session, port applicability, current network state, replicated match phase, connected player count, phase time remaining, recently active authoritative shot counters, and the final match result in the upper-left corner. A player's shot counter appears when its replicated total increases, is marked `[LC]` when it came through the lag-compensated server path, and disappears after five seconds without another confirmed shot. Its world-space ray disappears one second after the last confirmed fire input. A miss draws the full configured range; a collision ends at the lag-compensated server hit point. Each player uses the same distinct color for its ray, shot counter, and result row. Health remains visible in the production HUD while the replicated player object exists. At zero health, movement and firing stop, and remote clients hide the player's renderers without despawning the network object; during `Playing`, the server restores the player at its original spawn point after three seconds and the renderers become visible again. When `Playing` ends, the server snapshots both scores and publishes the winner or draw independently of the player objects. The dedicated server writes process information with a `[LocalProcess]` prefix to its log and the final result with a `[MatchResult][Server]` prefix.
+
+If either client disconnects during `Playing`, the server records that player as having forfeited, preserves both current scores, and moves through `Finishing` to `Finished`. The remaining client receives the standard Results screen with the connected opponent as the winner. A disconnect during the starting countdown instead returns the server to `WaitingForPlayers`.
 
 The server also owns and replicates the local match phases:
 
@@ -113,6 +117,28 @@ WaitingForPlayers -> Starting -> Playing -> Finishing -> Finished
 ```
 
 Phase transitions are written to server and client logs with a `[Match]` prefix. The current local tuning is two required players, a three-second countdown, a 60-second match, and a one-second finishing phase.
+
+## Validate
+
+To scan all three logs for startup failures and critical runtime exceptions, run:
+
+```powershell
+.\ValidateLocalMatch.ps1
+```
+
+After finishing one match, require a complete `Playing -> Finished` lifecycle and a server-authored result:
+
+```powershell
+.\ValidateLocalMatch.ps1 -RequireCompletedMatch
+```
+
+After using `Find Game Again` on both clients and finishing the second match, validate local server reuse as well:
+
+```powershell
+.\ValidateLocalMatch.ps1 -RequireRepeatedMatch
+```
+
+The repeated-match check requires two complete lifecycles in every process log and the server message `[Match][Server] Prepared the local session for the next match.`. The script exits with an error when a required stage is missing or a known critical connection/runtime error is present.
 
 All three processes must use the same Photon Fusion AppId and region configuration. The local UDP port is bound by the dedicated server; Fusion clients join the named session through Photon Cloud.
 

@@ -4,6 +4,11 @@ namespace Shooter.Features.Player
 {
     public static class PlayerJumpRules
     {
+        public static bool CanStartJump(bool jumpPressed, bool isGrounded)
+        {
+            return jumpPressed && isGrounded;
+        }
+
         public static PlayerJumpState Simulate(PlayerJumpState state, bool jumpPressed, float jumpSpeed, float gravity, float deltaTime)
         {
             ValidateParameters(jumpSpeed, gravity, deltaTime);

@@ -10,6 +10,8 @@ namespace Shooter.Presentation.ClientFlow
 
         protected abstract string Status { get; }
 
+        protected virtual Action Cancel => null;
+
         public UiScreenRequest Create(ClientFlowSnapshot snapshot)
         {
             if (snapshot == null)
@@ -17,7 +19,7 @@ namespace Shooter.Presentation.ClientFlow
                 throw new ArgumentNullException(nameof(snapshot));
             }
 
-            return new UiScreenRequest(ClientUiScreenAddresses.Connecting, new ConnectingViewModel(Status));
+            return new UiScreenRequest(ClientUiScreenAddresses.Connecting, new ConnectingViewModel(Status, Cancel));
         }
     }
 }

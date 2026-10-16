@@ -31,5 +31,24 @@ namespace Shooter.Features.Score.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => rules.DetermineWinnerPlayerId(1, -1, 2, 0));
             Assert.Throws<ArgumentException>(() => rules.DetermineWinnerPlayerId(1, 0, 1, 0));
         }
+
+        [TestCase(1, 2, 1, 2)]
+        [TestCase(1, 2, 2, 1)]
+        public void OpponentWinsWhenPlayerForfeits(int firstPlayerId, int secondPlayerId, int forfeitingPlayerId, int expectedWinnerPlayerId)
+        {
+            var rules = new MatchResultRules();
+
+            Assert.That(rules.DetermineForfeitWinnerPlayerId(firstPlayerId, secondPlayerId, forfeitingPlayerId), Is.EqualTo(expectedWinnerPlayerId));
+        }
+
+        [Test]
+        public void InvalidForfeitParticipantsAreRejected()
+        {
+            var rules = new MatchResultRules();
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => rules.DetermineForfeitWinnerPlayerId(-1, 2, 1));
+            Assert.Throws<ArgumentException>(() => rules.DetermineForfeitWinnerPlayerId(1, 1, 1));
+            Assert.Throws<ArgumentException>(() => rules.DetermineForfeitWinnerPlayerId(1, 2, 3));
+        }
     }
 }

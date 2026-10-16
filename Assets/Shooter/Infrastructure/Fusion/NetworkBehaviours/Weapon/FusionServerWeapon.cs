@@ -2,6 +2,7 @@ using global::Fusion;
 using Shooter.Features.MatchRules;
 using Shooter.Features.Player;
 using Shooter.Features.Weapon;
+using Shooter.Application;
 using UnityEngine;
 
 namespace Shooter.Infrastructure.Fusion
@@ -11,16 +12,18 @@ namespace Shooter.Infrastructure.Fusion
     [RequireComponent(typeof(FusionPlayerScoreState))]
     public sealed class FusionServerWeapon : NetworkBehaviour
     {
-        private const float RoundsPerMinute = 600f;
-        private const float ShotOriginHeight = 0.5f;
-        private const float ShotOriginForwardOffset = 0.6f;
-        private static readonly AutomaticWeaponRules Rules = new AutomaticWeaponRules(RoundsPerMinute);
+        private AutomaticWeaponRules _rules;
+        private WeaponGameplayConfiguration _configuration;
+        private PlayerGameplayConfiguration _playerConfiguration;
         private FusionPlayerHealthState _healthState;
         private FusionPlayerScoreState _scoreState;
         private FusionMatchState _matchState;
 
         [Networked]
         public int ConfirmedShotCount { get; private set; }
+
+        [Networked]
+        public int ConfirmedHitCount { get; private set; }
 
         [Networked]
         public Vector3 LastShotOrigin { get; private set; }
@@ -33,9 +36,18 @@ namespace Shooter.Infrastructure.Fusion
 
         public override void Spawned()
         {
+            ConfigureRules();
             _healthState = GetComponent<FusionPlayerHealthState>();
             _scoreState = GetComponent<FusionPlayerScoreState>();
             enabled = Object.HasStateAuthority;
+        }
+
+        private void ConfigureRules()
+        {
+            var matchConfiguration = FusionMatchConfigurationResolver.Resolve(Runner);
+            _configuration = matchConfiguration.Weapon;
+            _playerConfiguration = matchConfiguration.Player;
+            _rules = new AutomaticWeaponRules(_configuration.RoundsPerMinute, _configuration.Range, _configuration.DamagePerHit);
         }
 
         public override void FixedUpdateNetwork()
@@ -61,20 +73,22 @@ namespace Shooter.Infrastructure.Fusion
         private bool CanAcceptFireInput()
         {
             ResolveMatchState();
-            return _matchState != null && MatchPhaseRules.AcceptsGameplayInput(_matchState.Phase) && !_healthState.IsDead;
+            return FusionNetworkBehaviourLifecycle.IsSpawned(_matchState) && MatchPhaseRules.AcceptsGameplayInput(_matchState.Phase) && !_healthState.IsDead;
         }
 
         private void ResolveMatchState()
         {
-            if (_matchState == null)
+            if (FusionNetworkBehaviourLifecycle.IsSpawned(_matchState))
             {
-                _matchState = FindFirstObjectByType<FusionMatchState>();
+                return;
             }
+
+            _matchState = FindFirstObjectByType<FusionMatchState>();
         }
 
-        private static bool TryGetShotDirection(FusionPlayerInput input, out Vector3 shotDirection)
+        private bool TryGetShotDirection(FusionPlayerInput input, out Vector3 shotDirection)
         {
-            if (!PlayerLookRules.TrySanitize(input.LookRotation.x, input.LookRotation.y, out var lookRotation))
+            if (!PlayerLookRules.TrySanitize(input.LookRotation.x, input.LookRotation.y, _playerConfiguration.MinimumLookPitch, _playerConfiguration.MaximumLookPitch, out var lookRotation))
             {
                 shotDirection = Vector3.zero;
                 return false;
@@ -98,35 +112,50 @@ namespace Shooter.Infrastructure.Fusion
         private void RegisterConfirmedShot()
         {
             ConfirmedShotCount++;
-            FireCooldown = TickTimer.CreateFromSeconds(Runner, Rules.SecondsBetweenShots);
+            FireCooldown = TickTimer.CreateFromSeconds(Runner, _rules.SecondsBetweenShots);
         }
 
         private Vector3 CalculateShotOrigin(Vector3 shotDirection)
         {
-            return transform.position + Vector3.up * ShotOriginHeight + shotDirection * ShotOriginForwardOffset;
+            return transform.position + Vector3.up * _configuration.ShotOriginHeight + shotDirection * _configuration.ShotOriginForwardOffset;
         }
 
         private bool ResolveShot(Vector3 shotOrigin, Vector3 shotDirection, out Vector3 shotEnd, out FusionPlayerHealthState target, out int appliedDamage)
         {
-            if (!Physics.Raycast(shotOrigin, shotDirection, out var hit, Rules.Range, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+            if (!TryResolveLagCompensatedHit(shotOrigin, shotDirection, out var hit))
             {
-                shotEnd = shotOrigin + shotDirection * Rules.Range;
+                shotEnd = shotOrigin + shotDirection * _rules.Range;
                 target = null;
                 appliedDamage = 0;
                 return false;
             }
 
-            shotEnd = hit.point;
-            target = hit.collider.GetComponentInParent<FusionPlayerHealthState>();
+            shotEnd = hit.Point;
+            target = hit.GameObject.GetComponentInParent<FusionPlayerHealthState>();
             if (target == null || target.Object == Object || target.IsDead)
             {
                 appliedDamage = 0;
                 return false;
             }
 
-            appliedDamage = target.ApplyDamage(Rules.DamagePerHit);
+            appliedDamage = target.ApplyDamage(_rules.DamagePerHit);
+            RegisterConfirmedHit(appliedDamage);
             AwardKillIfTargetDied(target);
             return appliedDamage > 0;
+        }
+
+        private void RegisterConfirmedHit(int appliedDamage)
+        {
+            if (appliedDamage > 0)
+            {
+                ConfirmedHitCount++;
+            }
+        }
+
+        private bool TryResolveLagCompensatedHit(Vector3 shotOrigin, Vector3 shotDirection, out LagCompensatedHit hit)
+        {
+            const HitOptions options = HitOptions.IncludePhysX | HitOptions.SubtickAccuracy | HitOptions.IgnoreInputAuthority;
+            return Runner.LagCompensation.Raycast(shotOrigin, shotDirection, _rules.Range, Object.InputAuthority, out hit, Physics.DefaultRaycastLayers, options, QueryTriggerInteraction.Ignore);
         }
 
         private void AwardKillIfTargetDied(FusionPlayerHealthState target)
@@ -150,11 +179,11 @@ namespace Shooter.Infrastructure.Fusion
         {
             if (didDamage)
             {
-                Debug.Log($"[Weapon][Server] Confirmed shot {ConfirmedShotCount} for player {Object.InputAuthority}; hit {target.Object.InputAuthority}; damage: {appliedDamage}; health: {target.CurrentHealth}/{target.MaxHealth}.");
+                Debug.Log($"[Weapon][Server] Lag-compensated shot {ConfirmedShotCount} for player {Object.InputAuthority}; hit {target.Object.InputAuthority}; damage: {appliedDamage}; health: {target.CurrentHealth}/{target.MaxHealth}.");
                 return;
             }
 
-            Debug.Log($"[Weapon][Server] Confirmed shot {ConfirmedShotCount} for player {Object.InputAuthority}; miss; interval: {Rules.SecondsBetweenShots:0.000}s.");
+            Debug.Log($"[Weapon][Server] Lag-compensated shot {ConfirmedShotCount} for player {Object.InputAuthority}; miss; interval: {_rules.SecondsBetweenShots:0.000}s.");
         }
     }
 }

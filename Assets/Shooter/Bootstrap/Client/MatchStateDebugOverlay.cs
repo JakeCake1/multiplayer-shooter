@@ -27,10 +27,12 @@ namespace Shooter.Bootstrap.Client
 
         private void FindMatchStateIfNeeded()
         {
-            if (_matchState == null)
+            if (FusionNetworkBehaviourLifecycle.IsSpawned(_matchState))
             {
-                _matchState = FindFirstObjectByType<FusionMatchState>();
+                return;
             }
+
+            _matchState = FindFirstObjectByType<FusionMatchState>();
         }
 
         private static string BuildText(FusionMatchState matchState)
@@ -40,7 +42,7 @@ namespace Shooter.Bootstrap.Client
 
         private bool HasReplicatedState()
         {
-            return IsSpawned(_matchState);
+            return FusionNetworkBehaviourLifecycle.IsSpawned(_matchState);
         }
     }
 }

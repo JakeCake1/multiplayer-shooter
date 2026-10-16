@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using PlayFab;
 using Shooter.Application;
+using UnityEngine;
 
 namespace Shooter.Infrastructure.PlayFab
 {
@@ -127,7 +128,16 @@ namespace Shooter.Infrastructure.PlayFab
             }
 
             _playerEntity = result.Result ?? throw new InvalidOperationException("PlayFab login succeeded without a player entity.");
+            LogAuthenticatedPlayer();
             return AuthenticationResult.Success(GetAuthenticatedPlayerId());
+        }
+
+        private void LogAuthenticatedPlayer()
+        {
+            var entityKeyResult = _playerEntity.GetEntityKey();
+            var entityId = entityKeyResult.Failed() ? $"unavailable (HRESULT 0x{entityKeyResult.HResult:X8})" : entityKeyResult.Result.Id;
+            var playFabId = _playerEntity.LoginResult.HasValue ? _playerEntity.LoginResult.Value.PlayFabId : string.Empty;
+            Debug.Log($"[PlayFab][Authentication] CustomId '{_options.CustomId}' authenticated as PlayFabId '{playFabId}' and EntityId '{entityId}'.");
         }
 
         private string GetAuthenticatedPlayerId()

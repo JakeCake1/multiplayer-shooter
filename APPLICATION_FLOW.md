@@ -272,7 +272,7 @@ User actions that start work are disabled or ignored while the corresponding tra
 | Matchmaking failure or timeout | Cancel/delete ticket | `Menu` with recoverable problem |
 | User cancels search | Cancel/delete ticket | `Menu` without an error |
 | Allocation failure | Cancel/delete remaining ticket state | `Menu` with recoverable problem |
-| Connection failure | Stop and dispose runner | `Menu` with recoverable problem |
+| Connection failure or 30-second timeout | Stop and dispose runner; ignore a superseded late start result | `Menu` with recoverable problem |
 | Disconnect before play | Dispose session | `Menu` with recoverable problem |
 | Disconnect during play | Dispose session; do not invent results | `Menu` with disconnect problem |
 | Invalid/missing final results | Dispose session | `Menu` with protocol/session problem |
@@ -343,16 +343,16 @@ and phase timer.
 The current local-development tuning is provisional and configurable on
 `ServerLifetimeScope`: two required players, a three-second countdown, a 60-second match,
 and a one-second finishing phase. If a player leaves during countdown, the server returns
-to `WaitingForPlayers`. Opponent disconnect semantics after `Playing` starts remain deferred
-until the combat/results slice.
+to `WaitingForPlayers`. If a player leaves after `Playing` starts, the server snapshots both
+scores, awards the match to the connected opponent by forfeit, and enters `Finishing`.
 
 ### Current Local Client-Presentation Slice
 
 The local client now starts in an application-owned `Booting` state instead of starting Fusion from a bootstrap entry point. `ClientFlowCoordinator` owns `Booting -> Menu -> Searching -> Connecting -> WaitingForPlayers -> Playing -> Results`, invokes application-level authentication, matchmaking, and network-session capabilities, and retains project-owned snapshots only. A bootstrap bridge translates the replicated Fusion match phase and immutable result into those snapshots; the UI Toolkit presentation observes `IClientFlowController` and does not reference Fusion.
 
-`Find Game Again` first stops the completed network session and then starts discovery again. Authentication, matchmaking, and connection failures return to `Menu` with a recoverable problem, while Exit is routed through `IApplicationQuitter`. The local adapters complete authentication and matchmaking immediately but still exercise the same visible `Booting` and `Searching` states as the future PlayFab path.
+`Find Game Again` first stops the completed network session and then starts discovery again. Completed-session cleanup has an application-owned ten-second timeout: when it expires, the client returns to `Menu` with a recoverable problem and Find Game remains unavailable until the outstanding stop actually reaches `Disconnected`; no new matchmaking ticket is created while cleanup is pending. Connection startup has a separate 30-second watchdog. When it expires, Application stops the partial session before enabling Find Game again, while the Fusion adapter rejects any late completion from the superseded start operation so it cannot recreate a ghost connection. While `Searching` is active, the progress screen exposes Cancel; the coordinator invalidates the current flow attempt, cancels its token, and returns to `Menu` without reporting a failure. The PlayFab matchmaking adapter observes that cancellation and deletes its active ticket, while stale completion results cannot start a network session. An authentication failure disables Find Game and exposes an explicit Retry Authentication action; retry runs through `Booting` and republishes authenticated menu readiness before matchmaking can start. Matchmaking and connection failures return to the authenticated `Menu` with a recoverable problem, while Exit is routed through `IApplicationQuitter`. Expected Fusion start/stop transitions are scoped separately from unexpected disconnects, so planned cleanup does not surface a false disconnect problem. The local adapters complete authentication and matchmaking immediately but still exercise the same visible `Booting` and `Searching` states as the future PlayFab path.
 
-`IAuthenticationService` and `IMatchmakingService` now form the neutral backend boundary. Authentication uses the PlayFab Unified SDK behind `Shooter.Infrastructure.PlayFab`; local launch arguments provide the public Title ID and a distinct development Custom ID for each client. Matchmaking remains an immediate local implementation and returns the same `NetworkSessionStartRequest` model that a future PlayFab adapter will create from ticket and allocation results. Replacing local discovery with PlayFab therefore changes role-specific registrations and infrastructure implementations without changing Presentation or Fusion session ownership. Flow attempts own cancellation tokens and ignore stale asynchronous completions.
+`IAuthenticationService` and `IMatchmakingService` now form the neutral backend boundary. Authentication uses the PlayFab Unified SDK behind `Shooter.Infrastructure.PlayFab`; local launch arguments provide the public Title ID and a distinct development Custom ID for each client. Matchmaking remains an immediate local implementation and returns the same `NetworkSessionStartRequest` model that a future PlayFab adapter will create from ticket and allocation results. Replacing local discovery with PlayFab therefore changes role-specific registrations and infrastructure implementations without changing Presentation or Fusion session ownership. Flow attempts own cancellation tokens and ignore stale asynchronous completions. The PlayFab adapter also applies a completion watchdog after the SDK ticket timeout; a missing callback cancels and clears the active ticket before returning a recoverable matchmaking timeout.
 
 The production UI replacement uses MVVM inside `Shooter.Presentation`. `ClientFlowUiPresenter` observes application snapshots, and the stable `ClientFlowScreenFactory` resolves one `IClientFlowScreenProvider` per state. State-specific providers own screen/ViewModel construction, while `ClientFlowScreenComposition` owns their extensible registration list. The stable `UiController` owns Addressables instantiation, rebinding, stale-load rejection, and release. Views know only their typed ViewModel and named UI Toolkit elements; ViewModels do not reference Unity, Fusion, PlayFab, or Addressables.
 
@@ -360,8 +360,8 @@ The client flow UI is now composed through `ClientFlowUiPresenter` and loads the
 
 | Address | View component | Required named elements |
 |---|---|---|
-| `ui/screens/main-menu` | `MainMenuView` | `find-game-button`, `exit-button`, `problem-label` |
-| `ui/screens/connecting` | `ConnectingView` | `status-label` |
+| `ui/screens/main-menu` | `MainMenuView` | `find-game-button`, `retry-authentication-button`, `exit-button`, `problem-label`, `sensitivity-slider`, `sensitivity-value-label` |
+| `ui/screens/connecting` | `ConnectingView` | `status-label`, `cancel-button` |
 | `ui/screens/waiting-for-players` | `WaitingForPlayersView` | `players-label`, `countdown-label` |
 | `ui/screens/results` | `ResultsView` | `outcome-label`, `first-player-score-label`, `second-player-score-label`, `find-game-again-button`, `exit-button` |
 

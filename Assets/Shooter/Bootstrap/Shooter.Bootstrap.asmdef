@@ -8,7 +8,9 @@
     "Shooter.Presentation",
     "Shooter.Infrastructure.Fusion",
     "Shooter.Infrastructure.PlayFab",
-    "VContainer"
+    "VContainer",
+    "Unity.Addressables",
+    "Unity.ResourceManager"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

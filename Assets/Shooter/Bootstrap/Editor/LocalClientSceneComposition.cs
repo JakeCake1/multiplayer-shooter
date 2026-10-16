@@ -9,7 +9,7 @@ namespace Shooter.Bootstrap.Editor
         {
             EnsureCamera(scene);
             EnsureDirectionalLight(scene);
-            EnsureGround(scene);
+            RemoveLegacyGround(scene);
         }
 
         private static void EnsureCamera(Scene scene)
@@ -41,18 +41,15 @@ namespace Shooter.Bootstrap.Editor
             light.type = LightType.Directional;
         }
 
-        private static void EnsureGround(Scene scene)
+        private static void RemoveLegacyGround(Scene scene)
         {
-            if (FindRoot(scene, "Ground") != null)
+            var ground = FindRoot(scene, "Ground");
+            if (ground == null)
             {
                 return;
             }
 
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            ground.name = "Ground";
-            SceneManager.MoveGameObjectToScene(ground, scene);
-            ground.transform.position = new Vector3(0f, -0.1f, 0f);
-            ground.transform.localScale = new Vector3(12f, 0.2f, 12f);
+            Object.DestroyImmediate(ground);
         }
 
         private static GameObject FindRoot(Scene scene, string name)

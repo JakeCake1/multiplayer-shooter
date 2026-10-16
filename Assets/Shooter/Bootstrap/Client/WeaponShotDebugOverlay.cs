@@ -60,7 +60,7 @@ namespace Shooter.Bootstrap
 
         private void ObserveConfirmedShots(FusionServerWeapon weapon)
         {
-            if (!IsSpawned(weapon))
+            if (!FusionNetworkBehaviourLifecycle.IsSpawned(weapon))
             {
                 return;
             }
@@ -156,7 +156,7 @@ namespace Shooter.Bootstrap
         {
             var previousColor = GUI.color;
             GUI.color = ClientDebugPlayerColors.Get(playerId);
-            GUI.Label(new Rect(24f, Top + 8f + RowHeight * index, Width - 24f, RowHeight), $"Player:{playerId}: {_confirmedShotCounts[playerId]} shots");
+            GUI.Label(new Rect(24f, Top + 8f + RowHeight * index, Width - 24f, RowHeight), $"Player:{playerId}: {_confirmedShotCounts[playerId]} shots [LC]");
             GUI.color = previousColor;
         }
     }

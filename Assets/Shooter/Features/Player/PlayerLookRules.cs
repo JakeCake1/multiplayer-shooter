@@ -4,18 +4,15 @@ namespace Shooter.Features.Player
 {
     public static class PlayerLookRules
     {
-        public const float MinimumPitch = -85f;
-        public const float MaximumPitch = 85f;
-
-        public static bool TrySanitize(float yaw, float pitch, out PlayerLookRotation rotation)
+        public static bool TrySanitize(float yaw, float pitch, float minimumPitch, float maximumPitch, out PlayerLookRotation rotation)
         {
             rotation = default;
-            if (!IsFinite(yaw) || !IsFinite(pitch))
+            if (!IsFinite(yaw) || !IsFinite(pitch) || !IsFinite(minimumPitch) || !IsFinite(maximumPitch) || minimumPitch >= maximumPitch)
             {
                 return false;
             }
 
-            rotation = new PlayerLookRotation(NormalizeYaw(yaw), Math.Clamp(pitch, MinimumPitch, MaximumPitch));
+            rotation = new PlayerLookRotation(NormalizeYaw(yaw), Math.Clamp(pitch, minimumPitch, maximumPitch));
             return true;
         }
 

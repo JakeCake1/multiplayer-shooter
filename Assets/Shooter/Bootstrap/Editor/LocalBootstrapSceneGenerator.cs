@@ -1,5 +1,6 @@
 using System.IO;
 using Shooter.Bootstrap.Client;
+using Shooter.Bootstrap.Configuration;
 using Shooter.Bootstrap.Server;
 using Shooter.Infrastructure.Fusion;
 using UnityEditor;
@@ -17,6 +18,8 @@ namespace Shooter.Bootstrap.Editor
         private const string ServerScenePath = "Assets/Scenes/LocalServer.unity";
         private const string PlayerPrefabPath = "Assets/Shooter/Infrastructure/Fusion/Prefabs/Player.prefab";
         private const string MatchStatePrefabPath = "Assets/Shooter/Infrastructure/Fusion/Prefabs/MatchState.prefab";
+        private const string ArenaPrefabPath = "Assets/Shooter/Infrastructure/Fusion/Prefabs/Arena.prefab";
+        private const string MatchConfigurationPath = "Assets/Shooter/Configuration/MatchConfiguration.json";
 
         [InitializeOnLoadMethod]
         private static void CreateMissingScenesAfterImport()
@@ -29,6 +32,7 @@ namespace Shooter.Bootstrap.Editor
         {
             EnsurePlayerPrefab();
             EnsureMatchStatePrefab();
+            EnsureArenaPrefab();
             EnsureAddressableNetworkAssets();
             EnsureScene<ClientLifetimeScope>(ClientScenePath, "Client Lifetime Scope", includeClientPresentation: true);
             EnsureScene<ServerLifetimeScope>(ServerScenePath, "Server Lifetime Scope", includeClientPresentation: false);
@@ -91,6 +95,42 @@ namespace Shooter.Bootstrap.Editor
             }
         }
 
+        private static void EnsureArenaPrefab()
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(ArenaPrefabPath) == null)
+            {
+                CreateArenaPrefab();
+                return;
+            }
+
+            var prefabRoot = PrefabUtility.LoadPrefabContents(ArenaPrefabPath);
+            try
+            {
+                if (ArenaPrefabComposition.Ensure(prefabRoot))
+                {
+                    PrefabUtility.SaveAsPrefabAsset(prefabRoot, ArenaPrefabPath);
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        private static void CreateArenaPrefab()
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(ArenaPrefabPath));
+            var arena = ArenaPrefabComposition.Create();
+            try
+            {
+                PrefabUtility.SaveAsPrefabAsset(arena, ArenaPrefabPath);
+            }
+            finally
+            {
+                Object.DestroyImmediate(arena);
+            }
+        }
+
         private static void EnsureAddressableNetworkAssets()
         {
             var settings = AddressableAssetSettingsDefaultObject.GetSettings(create: true);
@@ -101,22 +141,24 @@ namespace Shooter.Bootstrap.Editor
                 changed = true;
             }
 
-            changed |= MarkAddressable(settings, PlayerPrefabPath, FusionNetworkAssetAddresses.PlayerPrefab);
-            changed |= MarkAddressable(settings, MatchStatePrefabPath, FusionNetworkAssetAddresses.MatchStatePrefab);
+            changed |= MarkAddressable(settings, PlayerPrefabPath, FusionNetworkAssetAddresses.PlayerPrefab, settings.DefaultGroup);
+            changed |= MarkAddressable(settings, MatchStatePrefabPath, FusionNetworkAssetAddresses.MatchStatePrefab, settings.DefaultGroup);
+            changed |= MarkAddressable(settings, ArenaPrefabPath, FusionContentAssetAddresses.ArenaPrefab, settings.DefaultGroup);
+            changed |= MarkAddressable(settings, MatchConfigurationPath, MatchConfigurationAssetAddress.Value, settings.FindGroup("MatchRules") ?? settings.DefaultGroup);
             if (changed)
             {
                 EditorUtility.SetDirty(settings);
             }
         }
 
-        private static bool MarkAddressable(AddressableAssetSettings settings, string assetPath, string address)
+        private static bool MarkAddressable(AddressableAssetSettings settings, string assetPath, string address, AddressableAssetGroup group)
         {
             var guid = AssetDatabase.AssetPathToGUID(assetPath);
             var entry = settings.FindAssetEntry(guid);
-            var changed = entry == null || entry.parentGroup != settings.DefaultGroup;
+            var changed = entry == null || entry.parentGroup != group;
             if (changed)
             {
-                entry = settings.CreateOrMoveEntry(guid, settings.DefaultGroup);
+                entry = settings.CreateOrMoveEntry(guid, group);
             }
 
             if (entry.address != address)
