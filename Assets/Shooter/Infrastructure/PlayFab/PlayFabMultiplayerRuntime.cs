@@ -9,7 +9,6 @@ namespace Shooter.Infrastructure.PlayFab
     {
         private readonly PlayFabClientOptions _options;
         private GameObject _eventPumpObject;
-        private PlayFabMatchmakingEventPump _eventPump;
         private bool _ownsInitialization;
         private bool _disposed;
 
@@ -23,14 +22,6 @@ namespace Shooter.Infrastructure.PlayFab
             ThrowIfDisposed();
             InitializeSdk();
             CreateEventPump();
-        }
-
-        public void SetMatchmakingProcessingActive(bool active)
-        {
-            if (_eventPump != null)
-            {
-                _eventPump.enabled = active;
-            }
         }
 
         public void Dispose()
@@ -65,8 +56,7 @@ namespace Shooter.Infrastructure.PlayFab
 
             _eventPumpObject = new GameObject("PlayFab Matchmaking Event Pump");
             Object.DontDestroyOnLoad(_eventPumpObject);
-            _eventPump = _eventPumpObject.AddComponent<PlayFabMatchmakingEventPump>();
-            _eventPump.enabled = false;
+            _eventPumpObject.AddComponent<PlayFabMatchmakingEventPump>();
         }
 
         private void DestroyEventPump()
@@ -78,7 +68,6 @@ namespace Shooter.Infrastructure.PlayFab
 
             Object.Destroy(_eventPumpObject);
             _eventPumpObject = null;
-            _eventPump = null;
         }
 
         private void UninitializeSdk()

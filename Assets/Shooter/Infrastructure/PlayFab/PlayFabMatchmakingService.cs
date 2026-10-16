@@ -82,7 +82,6 @@ namespace Shooter.Infrastructure.PlayFab
         private void StartMatchmakingRequest(string attributes)
         {
             _runtime.EnsureInitialized();
-            _runtime.SetMatchmakingProcessingActive(true);
             _activeCompletion = new TaskCompletionSource<MatchmakingResult>(TaskCreationOptions.RunContinuationsAsynchronously);
             _activeTicket = CreateTicket(attributes);
             if (_activeTicket == null)
@@ -93,9 +92,7 @@ namespace Shooter.Infrastructure.PlayFab
 
         private void LogTicketRequested()
         {
-            var entityKeyResult = _playerSession.PlayerEntity.GetEntityKey();
-            var entityId = entityKeyResult.Failed() ? $"unavailable (HRESULT 0x{entityKeyResult.HResult:X8})" : entityKeyResult.Result.Id;
-            Debug.Log($"[PlayFab][Matchmaking] EntityId '{entityId}' requested ticket '{_activeTicket.TicketId}' for queue '{_options.QueueName}'.");
+            Debug.Log($"[PlayFab][Matchmaking] EntityId '{GetPlayerEntityId()}' created a ticket request for queue '{_options.QueueName}'; TicketId is pending SDK confirmation.");
         }
 
         private void RegisterEvents()
@@ -117,7 +114,7 @@ namespace Shooter.Infrastructure.PlayFab
                 return;
             }
 
-            Debug.Log($"[PlayFab] Matchmaking ticket '{ticket.TicketId}' status: {ticket.Status}.");
+            Debug.Log($"[PlayFab][Matchmaking] EntityId '{GetPlayerEntityId()}' ticket '{ticket.TicketId}' status: {ticket.Status}.");
         }
 
         private void HandleTicketCompleted(MatchmakingTicket ticket, int result)
@@ -235,7 +232,12 @@ namespace Shooter.Infrastructure.PlayFab
         {
             _activeTicket = null;
             _activeCompletion = null;
-            _runtime.SetMatchmakingProcessingActive(false);
+        }
+
+        private string GetPlayerEntityId()
+        {
+            var entityKeyResult = _playerSession.PlayerEntity.GetEntityKey();
+            return entityKeyResult.Failed() ? $"unavailable (HRESULT 0x{entityKeyResult.HResult:X8})" : entityKeyResult.Result.Id;
         }
 
         private void ThrowIfDisposed()
